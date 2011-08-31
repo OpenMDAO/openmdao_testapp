@@ -26,7 +26,8 @@ def get_commits():
                 passes += 1
             else:
                 fails += 1
-        obj = DumbObj(passes=passes, fails=fails, commit_id=commit, date=date)
+        obj = DumbObj(passes=passes, fails=fails, 
+                      commit_id=commit.commit_id, date=date)
         ret.append(obj)
     return ret
 
