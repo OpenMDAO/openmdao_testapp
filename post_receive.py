@@ -23,7 +23,6 @@ import model
 
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 RESULTS_DIR = os.path.join(APP_DIR, 'host_results')
-REPO_URL = LOCAL_REPO_DIR = APP_URL = REPO_BRANCHES = REMOTE_NAME = FROM_EMAIL = RESULTS_EMAILS = PY = HOSTS = TEST_ARGS = None
 
 commit_queue = Queue()
 
@@ -228,6 +227,9 @@ class Run:
         
 
 if __name__ == "__main__":
+    global REPO_URL, LOCAL_REPO_DIR, APP_URL, REPO_BRANCHES, REMOTE_NAME, FROM_EMAIL, RESULTS_EMAILS
+    global PY, HOSTS, TEST_ARGS
+    
     config = ConfigParser.ConfigParser()
     config.readfp(open(os.path.join(APP_DIR, 'testing.cfg'), 'r'))
     

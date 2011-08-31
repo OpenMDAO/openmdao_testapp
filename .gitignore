@@ -1,4 +1,6 @@
 testing.cfg
 testdb
 *.pyc
-
+*.pyo
+*.pyd
+*~
