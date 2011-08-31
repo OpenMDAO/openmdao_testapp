@@ -121,7 +121,6 @@ def do_tests(q):
     while True:
         payload = q.get(block=True)
         try:
-            print 'testing payload %s' % payload
             test_commit(payload)
         except Exception as err:
             print str(err)
@@ -253,10 +252,10 @@ class Run:
 
 if __name__ == "__main__":
     
-    #tester = Thread(target=do_tests, name='tester', args=(commit_queue,))
-    #tester.daemon = True
-    #print 'starting tester thread'
-    #tester.start()
+    tester = Thread(target=do_tests, name='tester', args=(commit_queue,))
+    tester.daemon = True
+    print 'starting tester thread'
+    tester.start()
     
     app = web.application(urls, globals())
     print 'running app'
