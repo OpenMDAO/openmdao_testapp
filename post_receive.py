@@ -24,6 +24,24 @@ import model
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 RESULTS_DIR = os.path.join(APP_DIR, 'host_results')
 
+config = ConfigParser.ConfigParser()
+config.readfp(open(os.path.join(APP_DIR, 'testing.cfg'), 'r'))
+
+REPO_URL = config.get('openmdao_testing', 'repo_url')
+LOCAL_REPO_DIR = config.get('openmdao_testing', 'local_repo_dir')
+APP_URL = config.get('openmdao_testing', 'app_url')
+REPO_BRANCHES = [s.strip() for s in config.get('openmdao_testing', 
+                                               'repo_branches').split('\n')]
+REMOTE_NAME = config.get('openmdao_testing', 'remote_name')
+FROM_EMAIL = config.get('openmdao_testing', 'from_email')
+RESULTS_EMAILS = [s.strip() for s in config.get('openmdao_testing', 
+                                                'results_emails').split('\n')]
+PY = config.get('openmdao_testing', 'py')
+HOSTS = [s.strip() for s in config.get('openmdao_testing', 
+                                       'hosts').split('\n')]
+TEST_ARGS = [s.strip() for s in config.get('openmdao_testing', 
+                                           'test_args').split('\n')]
+
 commit_queue = Queue()
 
 
@@ -227,26 +245,6 @@ class Run:
         
 
 if __name__ == "__main__":
-    global REPO_URL, LOCAL_REPO_DIR, APP_URL, REPO_BRANCHES, REMOTE_NAME, FROM_EMAIL, RESULTS_EMAILS
-    global PY, HOSTS, TEST_ARGS
-    
-    config = ConfigParser.ConfigParser()
-    config.readfp(open(os.path.join(APP_DIR, 'testing.cfg'), 'r'))
-    
-    REPO_URL = config.get('openmdao_testing', 'repo_url')
-    LOCAL_REPO_DIR = config.get('openmdao_testing', 'local_repo_dir')
-    APP_URL = config.get('openmdao_testing', 'app_url')
-    REPO_BRANCHES = [s.strip() for s in config.get('openmdao_testing', 
-                                                   'repo_branches').split('\n')]
-    REMOTE_NAME = config.get('openmdao_testing', 'remote_name')
-    FROM_EMAIL = config.get('openmdao_testing', 'from_email')
-    RESULTS_EMAILS = [s.strip() for s in config.get('openmdao_testing', 
-                                                    'results_emails').split('\n')]
-    PY = config.get('openmdao_testing', 'py')
-    HOSTS = [s.strip() for s in config.get('openmdao_testing', 
-                                           'hosts').split('\n')]
-    TEST_ARGS = [s.strip() for s in config.get('openmdao_testing', 
-                                               'test_args').split('\n')]
     
     #tester = Thread(target=do_tests, name='tester', args=(commit_queue,))
     #tester.daemon = True
