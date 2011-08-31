@@ -1,0 +1,19 @@
+
+[openmdao_testing]
+repo_url: https://github.com/OpenMDAO/OpenMDAO-Framework
+local_repo_dir: /home/openmdao/install/OpenMDAO-Framework
+app_url: http://blah.org/testingapp
+repo_branches: foo
+
+remote_name: bar
+from_email: somebody@somewhere.org
+results_emails: blah@blah.com
+    foo@foobar.org
+
+py: python2.6
+hosts: meerkat32_instance
+
+test_args: --
+   -v
+   openmdao.util.test.test_namelist
+

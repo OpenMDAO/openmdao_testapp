@@ -1,0 +1,15 @@
+$def with (tests)
+
+<h1>Test Results</h1>
+
+<ul>
+$for test in tests:
+    <li>
+        <a href="/p_r/view/$test.commit_id">$test.commit_id</a> 
+        on $test.date 
+        <form action="/p_r/delete/$test.commit_id" method="post">
+            <input type="submit" value="Delete"/>
+        </form>
+    </li>
+</ul>
+
