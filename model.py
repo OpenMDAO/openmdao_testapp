@@ -33,7 +33,7 @@ def get_commits():
 
 def get_host_tests(commit_id):
     try:
-        return db.query('tests', where='commit_id=$commit_id', 
+        return db.select('tests', where='commit_id=$commit_id', 
                          vars=locals())
     except IndexError:
         return None
