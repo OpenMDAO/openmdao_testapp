@@ -15,7 +15,7 @@ def get_commits():
     ret = []
     commits = db.query('SELECT DISTINCT commit_id from tests')
     for commit in commits:
-        tests = db.select('tests', where='commit_id=$commit',
+        tests = db.select('tests', where='commit_id=$commit.commit_id',
                           vars=locals())
         passes = 0
         fails = 0
