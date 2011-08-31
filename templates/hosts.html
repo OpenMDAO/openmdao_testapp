@@ -1,0 +1,12 @@
+$def with (tests)
+
+<h1>Test Results by Host</h1>
+
+<ul>
+$for test in tests:
+    <li>
+        <a href="/p_r/view/$test.host/$test.commit_id">$test.host</a> 
+        $test.status on $test.date 
+    </li>
+</ul>
+

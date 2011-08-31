@@ -50,7 +50,8 @@ commit_queue = Queue()
 urls = (
     '/', 'Index',
     '/run', 'Run',
-    '/view/(\w+)', 'View',
+    '/view/(\w+)/(\w+)', 'View',
+    '/hosts/(\w+)', 'Hosts',
     '/delete/(\w+)', 'Delete',
 )
 
@@ -58,7 +59,6 @@ def fixmulti(txt):
     """adds unescaped html line breaks"""
     txt = web.net.htmlquote(txt)
     return txt.replace('\n', '<br/>')
-    
     
     
 ### Templates
@@ -201,48 +201,51 @@ def process_results(commit_id, returncode, results_dir, output):
     msg = "\n\nFull test results can be found here: %s" % os.path.join(APP_URL,
                                                                        'view',
                                                                        commit_id)
-    results = collect_results(results_dir)
-    model.new_test(commit_id, results)
+    for host in os.listdir(results_dir):
+        try:
+            with open(os.path.join(results_dir, host, 'run.out'), 'r') as f:
+                model.new_test(commit_id, f.read(), returncode, host)
+        except Exception as err:
+            model.new_test(commit_id, str(err), returncode, host)
     send_mail(commit_id, returncode, output+msg)
-
-def collect_results(results_dir):
-    print 'collecting results from %s' % results_dir
-    results = StringIO.StringIO()
-    for d in os.listdir(results_dir):
-        with open(os.path.join(results_dir, d, 'run.out'), 'r') as f:
-            for line in f:
-                results.write(line)
-            results.write('\n---------------------------------\n')
-    return results.getvalue()
 
 
 class Index:
 
     def GET(self):
-        """ Show test index """
+        """ Show commit index """
         print 'Index:GET'
-        tests = model.get_tests()
-        return render.index(tests)
+        commits = model.get_commits()
+        return render.index(commits)
+
+class Hosts:
+
+    def GET(self, commit_id):
+        """ Show hosts for a given test """
+        print 'Hosts:GET'
+        tests = model.get_host_tests(commit_id)
+        return render.hosts(tests)
 
 class View:
 
-    def GET(self, commit_id):
+    def GET(self, host, commit_id):
+        """ View results for a single commit on a host"""
         print 'View:GET'
-        """ View results for a single commit """
-        test = model.get_test(commit_id)
+        test = model.get_test(host, commit_id)
         return render.view(test)
 
 class Delete:
 
     def POST(self, commit_id):
+        """ Delete all results for a commit """
         print 'Delete:POST'
-        """ Delete results for a commit """
         model.delete_test(commit_id)
         raise web.seeother('/p_r')
 
 class Run:
 
     def POST(self):
+        """ Run tests for a commit """
         print 'Run:POST'
         data = web.input('payload')
         payload = json.loads(data.payload)

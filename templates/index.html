@@ -1,12 +1,12 @@
-$def with (tests)
+$def with (commits)
 
-<h1>Test Results</h1>
+<h1>Test Results for each Commit</h1>
 
 <ul>
-$for test in tests:
+$for c in commits:
     <li>
-        <a href="/p_r/view/$test.commit_id">$test.commit_id</a> 
-        on $test.date 
+        <a href="/p_r/hosts/$c.commit_id">$c.commit_id</a> 
+        on $c.date passed: $c.passed  failed: $c.failed
         <form action="/p_r/delete/$test.commit_id" method="post">
             <input type="submit" value="Delete"/>
         </form>
