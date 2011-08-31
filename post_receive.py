@@ -23,6 +23,7 @@ import model
 
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 RESULTS_DIR = os.path.join(APP_DIR, 'host_results')
+REPO_URL = LOCAL_REPO_DIR = APP_URL = REPO_BRANCHES = REMOTE_NAME = FROM_EMAIL = RESULTS_EMAILS = PY = HOSTS = TEST_ARGS = None
 
 commit_queue = Queue()
 
@@ -133,6 +134,7 @@ def set_branch(branch, commit_id, repodir):
 
 
 def test_commit(payload):
+        global REPO_URL, REPO_BRANCHES
         #pprint.pprint(payload)
         #print '\n\n--------------------------\n\n'
         
