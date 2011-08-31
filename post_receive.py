@@ -56,6 +56,7 @@ urls = (
 
 def fixmulti(txt):
     """unescapes html line breaks"""
+    txt = web.net.htmlquote(txt)
     return txt.replace('&lt;br/&gt;', '<br/>')
     
     
