@@ -199,7 +199,7 @@ def test_commit(payload):
 
 def process_results(commit_id, returncode, results_dir, output):
     msg = "\n\nFull test results can be found here: %s" % os.path.join(APP_URL,
-                                                                       'view',
+                                                                       'hosts',
                                                                        commit_id)
     for host in os.listdir(results_dir):
         try:
