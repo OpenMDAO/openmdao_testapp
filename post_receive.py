@@ -204,9 +204,9 @@ def collect_results(results_dir):
     for d in os.listdir(results_dir):
         with open(os.path.join(results_dir, d, 'run.out'), 'r') as f:
             for line in f:
-                results.write(line.replace('\n','<br />'))
-                results.write('<br />')
-            results.write('\n---------------------------------<br />')
+                results.write(line)
+                results.write('\n')
+            results.write('\n---------------------------------\n')
     return results.getvalue()
 
 
