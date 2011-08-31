@@ -54,9 +54,16 @@ urls = (
     '/delete/(\w+)', 'Delete',
 )
 
+def fixmulti(txt):
+    """unescapes html line breaks"""
+    return txt.replace('&lt;br/&gt;', '<br/>')
+    
+    
+    
 ### Templates
 t_globals = {
-    'datestr': web.datestr
+    'datestr': web.datestr,
+    'fixmulti': fixmulti
     }
 
 render = web.template.render(os.path.join(APP_DIR,'templates'), 
@@ -204,9 +211,8 @@ def collect_results(results_dir):
     for d in os.listdir(results_dir):
         with open(os.path.join(results_dir, d, 'run.out'), 'r') as f:
             for line in f:
-                results.write(line)
-                results.write('\n')
-            results.write('\n---------------------------------\n')
+                results.write(line.replace('\n', '<br/>')
+            results.write('\n---------------------------------<br/>')
     return results.getvalue()
 
 
