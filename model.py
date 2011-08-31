@@ -1,7 +1,7 @@
 import os
 import web, datetime
 
-APP_DIR = '/home/openmdao/webapps/custom_app'
+APP_DIR = os.path.abspath(os.path.dirname(__file__))
 
 db = web.database(dbn='sqlite', 
                   db=os.path.join(APP_DIR,'testdb'))
