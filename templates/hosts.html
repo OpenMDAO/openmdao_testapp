@@ -6,11 +6,16 @@ $def with (tests, commit_id, commit_url)
 Commit: <a href="$commit_url">$commit_id</a>
 </p>
 
+$code:
+    def total(tst):
+        return tst.passes+tst.fails
+
+
 <ul>
 $for test in tests:
     <li>
         <a href="/p_r/view/$test.host/$test.commit_id">$test.host</a> 
-        passes: $test.passes fails: $test.fails in $test.elapsed_time 
+        ($test.passes/$total($test)) tests passed in $test.elapsed_time 
     </li>
 </ul>
 
