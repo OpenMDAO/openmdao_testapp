@@ -21,7 +21,7 @@ import web
 
 import model
 
-APP_DIR = os.path.abspath(os.path.dirname(__file__))
+APP_DIR = model.APP_DIR
 RESULTS_DIR = os.path.join(APP_DIR, 'host_results')
 
 config = ConfigParser.ConfigParser()
@@ -45,16 +45,6 @@ TEST_ARGS = [s.strip() for s in config.get('openmdao_testing',
 commit_queue = Queue()
 
 
-### Url mappings
-
-urls = (
-    '/', 'Index',
-    '/run', 'Run',
-    '/view/(\w+)/(\w+)', 'View',
-    '/hosts/(\w+)', 'Hosts',
-    '/delete/(\w+)', 'Delete',
-)
-
 def fixmulti(txt):
     """adds unescaped html line breaks"""
     txt = web.net.htmlquote(txt)
@@ -63,14 +53,55 @@ def fixmulti(txt):
     
 ### Templates
 t_globals = {
-    'datestr': web.datestr,
     'fixmulti': fixmulti
     }
 
 render = web.template.render(os.path.join(APP_DIR,'templates'), 
                              base='base', globals=t_globals)
 
+class Index:
 
+    def GET(self):
+        """ Show commit index """
+        print 'Index:GET'
+        commits = model.get_commits()
+        return render.index(commits)
+
+class Hosts:
+
+    def GET(self, commit_id):
+        """ Show hosts for a given test """
+        print 'Hosts:GET'
+        tests = model.get_host_tests(commit_id)
+        return render.hosts(tests)
+
+class View:
+
+    def GET(self, host, commit_id):
+        """ View results for a single commit on a host"""
+        print 'View:GET'
+        test = model.get_test(host, commit_id)
+        return render.view(test)
+
+class Delete:
+
+    def POST(self, commit_id):
+        """ Delete all results for a commit """
+        print 'Delete:POST'
+        model.delete_test(commit_id)
+        raise web.seeother('/p_r')
+
+class Run:
+
+    def POST(self):
+        """ Run tests for a commit """
+        print 'Run:POST'
+        data = web.input('payload')
+        payload = json.loads(data.payload)
+        #commit_queue.put(payload)
+        test_commit(payload)
+
+    
 def _has_checkouts(repodir):
     cmd = 'git status -s'
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
@@ -209,57 +240,23 @@ def process_results(commit_id, returncode, results_dir, output):
             model.new_test(commit_id, str(err), returncode, host)
     send_mail(commit_id, returncode, output+msg)
 
-
-class Index:
-
-    def GET(self):
-        """ Show commit index """
-        print 'Index:GET'
-        commits = model.get_commits()
-        return render.index(commits)
-
-class Hosts:
-
-    def GET(self, commit_id):
-        """ Show hosts for a given test """
-        print 'Hosts:GET'
-        tests = model.get_host_tests(commit_id)
-        return render.hosts(tests)
-
-class View:
-
-    def GET(self, host, commit_id):
-        """ View results for a single commit on a host"""
-        print 'View:GET'
-        test = model.get_test(host, commit_id)
-        return render.view(test)
-
-class Delete:
-
-    def POST(self, commit_id):
-        """ Delete all results for a commit """
-        print 'Delete:POST'
-        model.delete_test(commit_id)
-        raise web.seeother('/p_r')
-
-class Run:
-
-    def POST(self):
-        """ Run tests for a commit """
-        print 'Run:POST'
-        data = web.input('payload')
-        payload = json.loads(data.payload)
-        #commit_queue.put(payload)
-        test_commit(payload)
         
-
 if __name__ == "__main__":
     
     tester = Thread(target=do_tests, name='tester', args=(commit_queue,))
     tester.daemon = True
-    print 'starting tester thread'
     tester.start()
     
+    ### Url mappings
+    
+    urls = (
+        '/', 'Index',
+        '/run', 'Run',
+        '/view/(\w+)/(\w+)', 'View',
+        '/hosts/(\w+)', 'Hosts',
+        '/delete/(\w+)', 'Delete',
+    )
+
     app = web.application(urls, globals())
     print 'running app'
     app.run()

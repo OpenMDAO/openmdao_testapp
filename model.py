@@ -1,16 +1,13 @@
 import os
 import web, datetime
+from web.utils import Storage
 
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 
 db = web.database(dbn='sqlite', 
                   db=os.path.join(APP_DIR,'testdb'))
 
-class DumbObj(object):
-    def __init__(self, **kw):
-        for k,v in kw.items():
-            setattr(self, k, v)
-
+            
 def get_commits():
     ret = []
     commits = db.query('SELECT DISTINCT commit_id from tests')
@@ -26,7 +23,7 @@ def get_commits():
                 passes += 1
             else:
                 fails += 1
-        obj = DumbObj(passes=passes, fails=fails, 
+        obj = Storage(passes=passes, fails=fails, 
                       commit_id=commit.commit_id, date=date)
         ret.append(obj)
     return ret
