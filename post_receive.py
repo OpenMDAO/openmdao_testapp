@@ -63,7 +63,6 @@ class Index:
 
     def GET(self):
         """ Show commit index """
-        print 'Index:GET'
         commits = model.get_commits()
         return render.index(commits)
 
@@ -71,7 +70,6 @@ class Hosts:
 
     def GET(self, commit_id):
         """ Show hosts for a given test """
-        print 'Hosts:GET'
         tests = model.get_host_tests(commit_id)
         return render.hosts(tests)
 
@@ -79,7 +77,6 @@ class View:
 
     def GET(self, host, commit_id):
         """ View results for a single commit on a host"""
-        print 'View:GET'
         test = model.get_test(host, commit_id)
         return render.view(test)
 
@@ -87,7 +84,6 @@ class Delete:
 
     def POST(self, commit_id):
         """ Delete all results for a commit """
-        print 'Delete:POST'
         model.delete_test(commit_id)
         raise web.seeother('/p_r')
 
@@ -95,13 +91,13 @@ class Run:
 
     def POST(self):
         """ Run tests for a commit """
-        print 'Run:POST'
         data = web.input('payload')
         payload = json.loads(data.payload)
-        #commit_queue.put(payload)
-        test_commit(payload)
+        commit_queue.put(payload)
 
-    
+
+########################################################################
+
 def _has_checkouts(repodir):
     cmd = 'git status -s'
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
@@ -189,10 +185,6 @@ def set_branch(branch, commit_id, repodir):
 
 
 def test_commit(payload):
-        global REPO_URL, REPO_BRANCHES
-        #pprint.pprint(payload)
-        #print '\n\n--------------------------\n\n'
-        
         repo = payload['repository']['url']
         commit_id = payload['after']
         branch = payload['ref'].split('/')[-1]
