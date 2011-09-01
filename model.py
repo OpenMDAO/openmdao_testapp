@@ -26,7 +26,7 @@ def get_commits():
         obj = Storage(passes=passes, fails=fails, 
                       commit_id=commit.commit_id, date=date)
         ret.append(obj)
-    return ret
+    return ret, passes+fails
 
 
 def get_host_tests(commit_id):
