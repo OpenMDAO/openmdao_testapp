@@ -44,11 +44,12 @@ def get_test(host, commit_id):
     except IndexError:
         return None
 
-def new_test(commit_id, results, returncode, host):
-    status = 'PASS' if returncode==0 else 'FAIL'
+def new_test(commit_id, results, host, 
+             passes=0, fails=0, elapsed_time='unknown'):
     db.insert('tests', commit_id=commit_id, results=results, 
               date=datetime.datetime.utcnow(),
-              status=status, host=host)
+              status=status, host=host, passes=passes, fails=fails,
+              elapsed_time=elapsed_time)
 
 def delete_test(commit_id):
     db.delete('tests', where="commit_id=$commit_id", vars=locals())

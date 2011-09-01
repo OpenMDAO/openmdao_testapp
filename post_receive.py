@@ -13,6 +13,7 @@ import pprint
 import StringIO
 import subprocess
 import time
+import re
 from threading import Thread
 from Queue import Queue
 import ConfigParser
@@ -71,7 +72,8 @@ class Hosts:
     def GET(self, commit_id):
         """ Show hosts for a given test """
         tests = model.get_host_tests(commit_id)
-        return render.hosts(tests)
+        return render.hosts(tests, commit_id, 
+                            os.path.join(REPO_URL,'commit',commit_id))
 
 class View:
 
@@ -225,6 +227,31 @@ def test_commit(payload):
     finally:
         shutil.rmtree(tmp_results_dir)
 
+def parse_test_output(output):
+    """Given a string of test results, try to extract the following:
+        number of passing tests,
+        number of failing tests,
+        total elapsed time
+    Returns a tuple of the form (passes, fails, elapsed_time)
+    """
+    numtests = fails = 0
+    elapsed_time = 'unknown'
+    
+    last = output[-1024:]
+    ran_rgx = re.compile()
+    ran = re.search('Ran ([0-9]+) tests in ([0-9\.]+s)', last)
+    if ran:
+        numtests = int(ran.group(1))
+        elapsed_time = ran.group(2)
+        fail = re.search('FAILED \((.+)\)')
+        if fail:
+            parts = fail.group(1).split(',')
+            for part in parts:
+                fails += int(part.split('=')[1])
+    
+    return (numtests-fails, fails, elapsed_time)
+
+
 def process_results(commit_id, returncode, results_dir, output):
     msg = "\n\nFull test results can be found here: %s" % os.path.join(APP_URL,
                                                                        'hosts',
@@ -232,7 +259,11 @@ def process_results(commit_id, returncode, results_dir, output):
     for host in os.listdir(results_dir):
         try:
             with open(os.path.join(results_dir, host, 'run.out'), 'r') as f:
-                model.new_test(commit_id, f.read(), returncode, host)
+                results = f.read()
+                passes, fails, elapsed_time = parse_test_output(results)
+                model.new_test(commit_id, results, host,
+                               passes=passes, fails=fails, 
+                               elapsed_time=elapsed_time)
         except Exception as err:
             model.new_test(commit_id, str(err), returncode, host)
     send_mail(commit_id, returncode, output+msg)

@@ -1,12 +1,16 @@
-$def with (tests)
+$def with (tests, commit_id, commit_url)
 
 <h1>Test Results by Host</h1>
+
+<p>
+Commit: <a href="$commit_url">$commit_id</a>
+</p>
 
 <ul>
 $for test in tests:
     <li>
         <a href="/p_r/view/$test.host/$test.commit_id">$test.host</a> 
-        $test.status on $test.date 
+        passes: $test.passes fails: $test.fails on $test.date 
     </li>
 </ul>
 
