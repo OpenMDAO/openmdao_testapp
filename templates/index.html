@@ -7,11 +7,12 @@ $code:
         return tst.passes+tst.fails
 
 
-<ul>
+<table>
+<th>Commit</th><th>Date</th><th>Passed/Total</th>
 $for c in commits:
-    <li>
-        <a href="/p_r/hosts/$c.commit_id">$c.commit_id</a> 
-        on $c.date ($c.passes/$total(c)) platforms passed
-    </li>
-</ul>
-
+    <tr>
+        <td><a href="/p_r/hosts/$c.commit_id">$c.commit_id</a></td>
+        <td>$c.date</td> 
+        <td>($c.passes/$total(c))</td>
+    </tr>
+</table>
