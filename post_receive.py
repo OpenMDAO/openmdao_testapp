@@ -207,7 +207,7 @@ def test_commit(payload):
     
     # make sure this commit hasn't been tested yet
     cmnts = model.get_host_tests(commit_id)
-    if cmnts != None or len(list(cmts)) > 0:
+    if cmnts != None and len(list(cmts)) > 0:
         print "commit %s has already been tested" % commit_id
         return
     
