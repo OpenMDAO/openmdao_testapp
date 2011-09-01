@@ -64,8 +64,7 @@ class Index:
 
     def GET(self):
         """ Show commit index """
-        commits, total = model.get_commits()
-        return render.index(commits, total)
+        return render.index(model.get_commits())
 
 class Hosts:
 

@@ -17,7 +17,7 @@ def get_commits():
             obj = commitdict[test.commit_id]
         else:
             obj = Storage(passes=0, fails=0, 
-                          commit_id=commit.commit_id, date=date)
+                          commit_id=test.commit_id, date=date)
             commits.append(obj)
             commitdict[test.commit_id] = obj
             
