@@ -11,11 +11,18 @@ $code:
         return tst.passes+tst.fails
 
 
-<ul>
+<table cellspacing=10>
+<tr><th align=left>Host</th>
+<th align=left>Passed</th>
+<th align=left>Total</th>
+<th align=left>Elapsed Time</th>
+</tr>
 $for test in tests:
-    <li>
-        <a href="/p_r/view/$test.host/$test.commit_id">$test.host</a> 
-        $test.passes out of $total(test) tests passed in $test.elapsed_time 
-    </li>
-</ul>
+    <tr>
+        <td><a href="/p_r/view/$test.host/$test.commit_id">$test.host</a></td>
+        <td>$test.passes</td>
+        <td>$total(test)</td>
+        <td>$test.elapsed_time</td>
+    </tr>
+</table>
 
