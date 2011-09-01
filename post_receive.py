@@ -238,12 +238,11 @@ def parse_test_output(output):
     elapsed_time = 'unknown'
     
     last = output[-1024:]
-    ran_rgx = re.compile()
     ran = re.search('Ran ([0-9]+) tests in ([0-9\.]+s)', last)
     if ran:
         numtests = int(ran.group(1))
         elapsed_time = ran.group(2)
-        fail = re.search('FAILED \((.+)\)')
+        fail = re.search('FAILED \((.+)\)', last)
         if fail:
             parts = fail.group(1).split(',')
             for part in parts:
