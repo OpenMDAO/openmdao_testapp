@@ -1,6 +1,6 @@
 $def with (commits)
 
-<h1>Test Results for each Commit</h1>
+<h1>Test Results</h1>
 
 $code:
     def total(tst):
@@ -10,8 +10,8 @@ $code:
 <table cellspacing=10>
 <tr><th align=left>Commit</th>
 <th align=left>Date</th>
-<th align=left>Passed</th>
-<th align=left>Total</th></tr>
+<th align=left>Hosts Passed</th>
+<th align=left>Hosts Tested</th></tr>
 $for c in commits:
     <tr>
         <td><a href="/p_r/hosts/$c.commit_id">$c.commit_id</a></td>

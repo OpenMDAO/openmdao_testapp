@@ -1,7 +1,7 @@
-$def with (test)
+$def with (test, commit_url)
 
-<h1>Results for commit $test.commit_id</h1>
-$test.date<br/><br/>
+<h2>Results for commit <a href="$commit_url">$test.commit_id</a></h2>
+Date: $test.date<br/><br/>
 
 <p>
 $:fixmulti(test.results)

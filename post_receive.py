@@ -79,7 +79,7 @@ class View:
     def GET(self, host, commit_id):
         """ View results for a single commit on a host"""
         test = model.get_test(host, commit_id)
-        return render.view(test)
+        return render.view(test, os.path.join(REPO_URL,'commit',commit_id))
 
 class Delete:
 
