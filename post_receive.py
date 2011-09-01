@@ -265,7 +265,7 @@ def process_results(commit_id, returncode, results_dir, output):
                                passes=passes, fails=fails, 
                                elapsed_time=elapsed_time)
         except Exception as err:
-            model.new_test(commit_id, str(err), returncode, host)
+            model.new_test(commit_id, str(err), host)
     send_mail(commit_id, returncode, output+msg)
 
         

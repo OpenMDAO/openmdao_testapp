@@ -19,7 +19,7 @@ def get_commits():
         for i,test in enumerate(tests):
             if i==0:
                 date = test.date
-            if test.passes != 0 and test.fails == 0:
+            if test.passes != '0' and test.fails == '0':
                 passes += 1
             else:
                 fails += 1
