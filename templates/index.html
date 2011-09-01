@@ -7,8 +7,8 @@ $code:
         return tst.passes+tst.fails
 
 
-<table cellpadding=5>
-<tr><th>Commit</th><th>Date</th><th>Passed/Total</th></tr>
+<table cellspacing=10>
+<tr><th align=left>Commit</th><th align=left>Date</th><th align=left>Passed/Total</th></tr>
 $for c in commits:
     <tr>
         <td><a href="/p_r/hosts/$c.commit_id">$c.commit_id</a></td>
