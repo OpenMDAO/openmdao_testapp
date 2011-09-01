@@ -19,7 +19,7 @@ def get_commits():
         for i,test in enumerate(tests):
             if i==0:
                 date = test.date
-            if test.status == 'PASS':
+            if test.passes != 0 and test.fails == 0:
                 passes += 1
             else:
                 fails += 1
@@ -48,7 +48,7 @@ def new_test(commit_id, results, host,
              passes=0, fails=0, elapsed_time='unknown'):
     db.insert('tests', commit_id=commit_id, results=results, 
               date=datetime.datetime.utcnow(),
-              status=status, host=host, passes=passes, fails=fails,
+              host=host, passes=passes, fails=fails,
               elapsed_time=elapsed_time)
 
 def delete_test(commit_id):
