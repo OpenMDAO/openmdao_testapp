@@ -10,7 +10,7 @@ Commit: <a href="$commit_url">$commit_id</a>
 $for test in tests:
     <li>
         <a href="/p_r/view/$test.host/$test.commit_id">$test.host</a> 
-        passes: $test.passes fails: $test.fails on $test.date 
+        passes: $test.passes fails: $test.fails in $test.elapsed_time 
     </li>
 </ul>
 
