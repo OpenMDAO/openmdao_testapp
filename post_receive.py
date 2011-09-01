@@ -116,7 +116,7 @@ def _has_checkouts(repodir):
 
 def activate_and_run(envdir, cmd):
     """"
-    Runs the given command from within an activated OpenMDAO virtual environment located
+    Runs the given command from within an activated virtual environment located
     in the specified directory.
     
     Returns the output and return code of the command as a tuple (output, returncode).
@@ -138,6 +138,9 @@ def activate_and_run(envdir, cmd):
 
 
 def _run_sub(cmd, **kwargs):
+    """Runs a subprocess and returns its output (stdout and stderr combined)
+    and return code.
+    """
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, **kwargs)
     output = p.communicate()[0]
@@ -145,17 +148,18 @@ def _run_sub(cmd, **kwargs):
 
 
 def do_tests(q):
+    """Loops over commit notifications and runs them sequentially."""
     while True:
         payload = q.get(block=True)
         try:
             test_commit(payload)
         except Exception as err:
             print str(err)
-        
 
-def send_mail(commit_id, retval, msg):
+def send_mail(commit_id, retval, msg, sender=FROM_EMAIL, 
+              dest_emails=RESULTS_EMAILS):
     status = 'succeeded' if retval == 0 else 'failed'
-    web.sendmail(FROM_EMAIL, RESULTS_EMAILS,
+    web.sendmail(sender, dest_emails,
                  'test %s for commit %s' % (status, commit_id),
                  msg)
 
@@ -185,40 +189,41 @@ def set_branch(branch, commit_id, repodir):
 
 
 def test_commit(payload):
-        repo = payload['repository']['url']
-        commit_id = payload['after']
-        branch = payload['ref'].split('/')[-1]
-        
-        if repo != REPO_URL:
-            print 'ignoring commit: repo URL %s does not match expected repo URL (%s)' % (repo, REPO_URL)
-            return
-        
-        if branch not in REPO_BRANCHES:
-            print 'branch is %s' % branch
-            print 'ignoring commit %s: branch is not one of %s' % (commit_id,
-                                                                   REPO_BRANCHES)
-            return
-        
-        set_branch(branch, commit_id, LOCAL_REPO_DIR)
+    """Run the test suite on the commit specified in payload."""
+    repo = payload['repository']['url']
+    commit_id = payload['after']
+    branch = payload['ref'].split('/')[-1]
     
-        tmp_results_dir = os.path.join(RESULTS_DIR, commit_id)
+    if repo != REPO_URL:
+        print 'ignoring commit: repo URL %s does not match expected repo URL (%s)' % (repo, REPO_URL)
+        return
+    
+    if branch not in REPO_BRANCHES:
+        print 'branch is %s' % branch
+        print 'ignoring commit %s: branch is not one of %s' % (commit_id,
+                                                               REPO_BRANCHES)
+        return
+    
+    set_branch(branch, commit_id, LOCAL_REPO_DIR)
+
+    tmp_results_dir = os.path.join(RESULTS_DIR, commit_id)
+    
+    cmd = ['test_branch', 
+           '-o', tmp_results_dir,
+           ]
+    for host in HOSTS:
+        cmd.append('--host=%s' % host)
         
-        cmd = ['test_branch', 
-               '-o', tmp_results_dir,
-               ]
-        for host in HOSTS:
-            cmd.append('--host=%s' % host)
-            
-        cmd += TEST_ARGS
-        
-        os.makedirs(tmp_results_dir)
-        try:
-            out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
-            process_results(commit_id, ret, tmp_results_dir, out)
-        except Exception as err:
-            process_results(commit_id, -1, tmp_results_dir, str(err))
-        finally:
-            shutil.rmtree(tmp_results_dir)
+    cmd += TEST_ARGS
+    
+    os.makedirs(tmp_results_dir)
+    try:
+        out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
+        process_results(commit_id, ret, tmp_results_dir, out)
+    except Exception as err:
+        process_results(commit_id, -1, tmp_results_dir, str(err))
+    finally:
+        shutil.rmtree(tmp_results_dir)
 
 def process_results(commit_id, returncode, results_dir, output):
     msg = "\n\nFull test results can be found here: %s" % os.path.join(APP_URL,
@@ -250,7 +255,6 @@ if __name__ == "__main__":
     )
 
     app = web.application(urls, globals())
-    print 'running app'
     app.run()
 
 

@@ -7,9 +7,6 @@ $for c in commits:
     <li>
         <a href="/p_r/hosts/$c.commit_id">$c.commit_id</a> 
         on $c.date passes: $c.passes  fails: $c.fails
-        <form action="/p_r/delete/$c.commit_id" method="post">
-            <input type="submit" value="Delete"/>
-        </form>
     </li>
 </ul>
 
