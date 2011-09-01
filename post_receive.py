@@ -206,6 +206,12 @@ def test_commit(payload):
                                                                REPO_BRANCHES)
         return
     
+    # make sure this commit hasn't been tested yet
+    cmts = model.get_host_tests(commit_id)
+    if cmnts != None or len(list(cmts)) > 0:
+        print "commit %s has already been tested" % commit_id
+        return
+    
     set_branch(branch, commit_id, LOCAL_REPO_DIR)
 
     tmp_results_dir = os.path.join(RESULTS_DIR, commit_id)

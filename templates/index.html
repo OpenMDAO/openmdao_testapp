@@ -1,12 +1,16 @@
-$def with (commits, total)
+$def with (commits)
 
 <h1>Test Results for each Commit</h1>
 
+$code:
+    def total(tst):
+        return tst.passes+tst.fails
+        
 <ul>
 $for c in commits:
     <li>
         <a href="/p_r/hosts/$c.commit_id">$c.commit_id</a> 
-        on $c.date ($c.passes/$total) platforms passed
+        on $c.date ($c.passes/$total(c)) platforms passed
     </li>
 </ul>
 

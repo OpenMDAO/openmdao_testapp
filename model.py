@@ -9,24 +9,24 @@ db = web.database(dbn='sqlite',
 
             
 def get_commits():
-    ret = []
-    commits = db.query('SELECT DISTINCT commit_id from tests')
-    for commit in commits:
-        tests = db.select('tests', where='commit_id=$commit.commit_id',
-                          vars=locals())
-        passes = 0
-        fails = 0
-        for i,test in enumerate(tests):
-            if i==0:
-                date = test.date
-            if test.fails > 0 or test.passes == 0:
-                fails += 1
-            else:
-                passes += 1
-        obj = Storage(passes=passes, fails=fails, 
-                      commit_id=commit.commit_id, date=date)
-        ret.append(obj)
-    return ret, passes+fails
+    commits = []
+    commitdict = {}
+    tests = db.select('tests', order='date DESC')
+    for test in tests:
+        if test.commit_id in commitdict:
+            obj = commitdict[test.commit_id]
+        else:
+            obj = Storage(passes=0, fails=0, 
+                          commit_id=commit.commit_id, date=date)
+            commits.append(obj)
+            commitdict[test.commit_id] = obj
+            
+        if test.fails > 0 or test.passes == 0:
+            obj.fails += 1
+        else:
+            obj.passes += 1
+            
+    return commits
 
 
 def get_host_tests(commit_id):
