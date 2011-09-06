@@ -83,6 +83,14 @@ class View:
         test = model.get_test(host, commit_id)
         return render.view(test, os.path.join(REPO_URL,'commit',commit_id))
 
+class ViewDocs:
+
+    def GET(self, host, commit_id):
+        """ View doc build results for a single commit on a host"""
+        test = model.get_test(host, commit_id)
+        return render.viewdocs(test, os.path.join('http://openmdao.org',
+                                                  'custom_app', 'dev_docs'))
+
 class Delete:
 
     def POST(self, commit_id):
@@ -158,7 +166,7 @@ def push_docs(commit_id):
         out = str(err)
         ret = -1
     model.update_doc_info(commit_id, out)
-    return ret
+    return out, ret
 
 
 def do_tests(q):
@@ -287,11 +295,14 @@ def process_results(commit_id, returncode, results_dir, output):
             model.new_test(commit_id, str(err), host)
 
     if returncode == 0:
-        returncode = push_docs(commit_id)  # update the dev docs if the tests passed
+        docout, returncode = push_docs(commit_id)  # update the dev docs if the tests passed
+        if returncode == 0:
+            docout = '\n\nDev docs built successfully\n'
     else:
-        model.update_doc_info(commit_id, "Dev docs were not built")
+        docout = "\n\nDev docs were not built\n"
+        model.update_doc_info(commit_id, docout)
 
-    send_mail(commit_id, returncode, output+msg)
+    send_mail(commit_id, returncode, output+docout+msg)
 
         
 if __name__ == "__main__":
@@ -306,6 +317,7 @@ if __name__ == "__main__":
         '/', 'Index',
         '/run', 'Run',
         '/view/(\w+)/(\w+)', 'View',
+        '/viewdocs/(\w+)/(\w+)', 'ViewDocs',
         '/hosts/(\w+)', 'Hosts',
         '/delete/(\w+)', 'Delete',
     )
