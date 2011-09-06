@@ -159,7 +159,7 @@ def _run_sub(cmd, **kwargs):
 
 
 def push_docs(commit_id):
-    cmd = ['push_docs', '-d', DEVDOCS_DIR]
+    cmd = ['push_docs', '-d', DEVDOCS_DIR, 'http://openmdao.org']
     try:
         out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
     except Exception as err:
