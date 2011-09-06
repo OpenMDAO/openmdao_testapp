@@ -43,7 +43,7 @@ HOSTS = [s.strip() for s in config.get('openmdao_testing',
 TEST_ARGS = [s.strip() for s in config.get('openmdao_testing', 
                                            'test_args').split('\n')]
 
-DEVDOCS_DIR = config.get('openmdao.testing', 'devdocs_location')
+DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location')
 
 commit_queue = Queue()
 

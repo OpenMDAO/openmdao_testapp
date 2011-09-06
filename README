@@ -1,3 +1,7 @@
 This is a webapp to manage automated testing of the OpenMDAO-Framework 
 repository.
 
+To build a new testing database, do the following:
+
+  python2.6 create_db.py
+
