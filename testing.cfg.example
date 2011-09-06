@@ -42,4 +42,4 @@ test_args: --
 
 # location on the openmdao.org server where dev docs will be 
 # placed (if the tests are successful)
-devdocs_location = webapps/custom_app
+devdocs_location = custom_app
