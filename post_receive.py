@@ -74,14 +74,15 @@ class Hosts:
         """ Show hosts for a given test """
         tests = model.get_host_tests(commit_id)
         return render.hosts(tests, commit_id, 
-                            os.path.join(REPO_URL,'commit',commit_id))
+                            os.path.join(REPO_URL,'commit',commit_id),
+                            os.path.join(APP_URL,'viewdocs',commit_id))
 
 class View:
 
     def GET(self, host, commit_id):
         """ View results for a single commit on a host"""
         test = model.get_test(host, commit_id)
-        return render.view(test, os.path.join(APP_URL,'viewdocs'),
+        return render.view(test,
                            os.path.join(REPO_URL,'commit',commit_id))
 
 class ViewDocs:
@@ -317,7 +318,7 @@ if __name__ == "__main__":
         '/', 'Index',
         '/run', 'Run',
         '/view/(\w+)/(\w+)', 'View',
-        '/viewdocs/(\w+)/(\w+)', 'ViewDocs',
+        '/viewdocs/(\w+)', 'ViewDocs',
         '/hosts/(\w+)', 'Hosts',
         '/delete/(\w+)', 'Delete',
     )

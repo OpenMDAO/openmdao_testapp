@@ -1,10 +1,13 @@
-$def with (tests, commit_id, commit_url)
+$def with (tests, commit_id, commit_url, docbuild_url)
 
 <h1>Test Results by Host</h1>
 
 <p>
 Commit: <a href="$commit_url">$commit_id</a>
 </p>
+
+<p><a href="$docbuild_url/$test.commit_id">Doc build</a></p>
+
 
 $code:
     def total(tst):
