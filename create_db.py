@@ -43,7 +43,9 @@ def main():
     for schema in schemas.split(';'):
         s = schema.strip()
         if s:
-            conn.execute(s+';')
+            s = s + ';'
+            print "s = '%s'" % s
+            conn.execute(s)
 
 if __name__ == '__main__':
     main()
