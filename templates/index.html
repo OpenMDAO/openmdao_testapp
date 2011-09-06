@@ -2,21 +2,16 @@ $def with (commits)
 
 <h1>Test Results</h1>
 
-$code:
-    def total(tst):
-        return tst.passes+tst.fails
-
-
 <table cellspacing=10>
 <tr><th align=left>Commit</th>
 <th align=left>Date</th>
 <th align=left>Hosts Passed</th>
-<th align=left>Hosts Tested</th></tr>
+<th align=left>Hosts Failed</th></tr>
 $for c in commits:
     <tr>
         <td><a href="/p_r/hosts/$c.commit_id">$c.commit_id</a></td>
         <td>$c.date</td> 
-        <td align=center>$c.passes</td>
-        <td align=center>$total(c)</td>
+        <td align=center style="color:green">$c.passes</td>
+        <td align=center style="color:red">$c.fails</td>
     </tr>
 </table>
