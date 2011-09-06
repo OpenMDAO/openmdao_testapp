@@ -39,3 +39,7 @@ test_args: --
    -v
    openmdao.util.test.test_namelist
 
+
+# location on the openmdao.org server where dev docs will be 
+# placed (if the tests are successful)
+devdocs_location = webapps/custom_app

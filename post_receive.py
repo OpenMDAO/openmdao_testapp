@@ -43,6 +43,8 @@ HOSTS = [s.strip() for s in config.get('openmdao_testing',
 TEST_ARGS = [s.strip() for s in config.get('openmdao_testing', 
                                            'test_args').split('\n')]
 
+DEVDOCS_DIR = config.get('openmdao.testing', 'devdocs_location')
+
 commit_queue = Queue()
 
 
@@ -148,14 +150,27 @@ def _run_sub(cmd, **kwargs):
     return (output, p.returncode)
 
 
+def push_docs():
+    cmd = ['push_docs', '-d', ]
+    try:
+        out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
+        process_results(commit_id, ret, tmp_results_dir, out)
+    except Exception as err:
+        out = str(err)
+        ret = -1
+    
+
 def do_tests(q):
     """Loops over commit notifications and runs them sequentially."""
     while True:
         payload = q.get(block=True)
         try:
-            test_commit(payload)
+            retval = test_commit(payload)
         except Exception as err:
             print str(err)
+        else:
+            if retval == 0:
+                push_docs()  # update the dev docs if the tests passed
 
 def send_mail(commit_id, retval, msg, sender=FROM_EMAIL, 
               dest_emails=RESULTS_EMAILS):
@@ -188,7 +203,6 @@ def set_branch(branch, commit_id, repodir):
         send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
         return
 
-
 def test_commit(payload):
     """Run the test suite on the commit specified in payload."""
     repo = payload['repository']['url']
@@ -197,19 +211,19 @@ def test_commit(payload):
     
     if repo != REPO_URL:
         print 'ignoring commit: repo URL %s does not match expected repo URL (%s)' % (repo, REPO_URL)
-        return
+        return -1
     
     if branch not in REPO_BRANCHES:
         print 'branch is %s' % branch
         print 'ignoring commit %s: branch is not one of %s' % (commit_id,
                                                                REPO_BRANCHES)
-        return
+        return -1
     
     # make sure this commit hasn't been tested yet
     cmnts = model.get_host_tests(commit_id)
     if cmnts != None and len(list(cmnts)) > 0:
         print "commit %s has already been tested" % commit_id
-        return
+        return -1
     
     set_branch(branch, commit_id, LOCAL_REPO_DIR)
 
@@ -228,9 +242,12 @@ def test_commit(payload):
         out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
         process_results(commit_id, ret, tmp_results_dir, out)
     except Exception as err:
-        process_results(commit_id, -1, tmp_results_dir, str(err))
+        ret = -1
+        process_results(commit_id, ret, tmp_results_dir, str(err))
     finally:
         shutil.rmtree(tmp_results_dir)
+        
+    return ret
 
 def parse_test_output(output):
     """Given a string of test results, try to extract the following:
