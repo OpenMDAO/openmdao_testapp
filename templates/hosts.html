@@ -14,13 +14,15 @@ $code:
 <table cellspacing=10>
 <tr><th align=left>Host</th>
 <th align=left>Passed</th>
+<th align=left>Failed</th>
 <th align=left>Total</th>
 <th align=left>Elapsed Time</th>
 </tr>
 $for test in tests:
     <tr>
         <td><a href="/p_r/view/$test.host/$test.commit_id">$test.host</a></td>
-        <td align=center>$test.passes</td>
+        <td align=center style="color:green">$test.passes</td>
+        <td align=center style="color:red">$test.fails</td>
         <td align=center>$total(test)</td>
         <td align=center>$test.elapsed_time</td>
     </tr>
