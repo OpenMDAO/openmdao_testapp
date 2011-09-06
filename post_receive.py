@@ -68,6 +68,7 @@ class Index:
         """ Show commit index """
         return render.index(model.get_commits())
 
+    
 class Hosts:
 
     def GET(self, commit_id):
