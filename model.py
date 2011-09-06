@@ -64,8 +64,7 @@ def get_docbuild(commit_id):
 
 
 def new_doc_info(commit_id, results):
-    db.insert('docbuilds', commit_id=commit_id, results=results,
-              vars=locals())
+    db.insert('docbuilds', commit_id=commit_id, results=results)
 
     
 def delete_test(commit_id):
