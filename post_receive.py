@@ -150,15 +150,16 @@ def _run_sub(cmd, **kwargs):
     return (output, p.returncode)
 
 
-def push_docs():
-    cmd = ['push_docs', '-d', ]
+def push_docs(commit_id):
+    cmd = ['push_docs', '-d', DEVDOCS_DIR]
     try:
         out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
-        process_results(commit_id, ret, tmp_results_dir, out)
     except Exception as err:
         out = str(err)
         ret = -1
-    
+    model.update_doc_info(commit_id, out)
+    return ret
+
 
 def do_tests(q):
     """Loops over commit notifications and runs them sequentially."""
@@ -168,9 +169,6 @@ def do_tests(q):
             retval = test_commit(payload)
         except Exception as err:
             print str(err)
-        else:
-            if retval == 0:
-                push_docs()  # update the dev docs if the tests passed
 
 def send_mail(commit_id, retval, msg, sender=FROM_EMAIL, 
               dest_emails=RESULTS_EMAILS):
@@ -287,6 +285,12 @@ def process_results(commit_id, returncode, results_dir, output):
                                elapsed_time=elapsed_time)
         except Exception as err:
             model.new_test(commit_id, str(err), host)
+
+    if returncode == 0:
+        returncode = push_docs(commit_id)  # update the dev docs if the tests passed
+    else:
+        model.update_doc_info(commit_id, "Dev docs were not built")
+
     send_mail(commit_id, returncode, output+msg)
 
         

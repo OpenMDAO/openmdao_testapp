@@ -1,3 +1,7 @@
+"""
+Functions that interact with the testing database.
+"""
+
 import os
 import web, datetime
 from web.utils import Storage
@@ -50,7 +54,12 @@ def new_test(commit_id, results, host,
               date=datetime.datetime.utcnow(),
               host=host, passes=passes, fails=fails,
               elapsed_time=elapsed_time)
+    
+def update_doc_info(commit_id, results):
+    db.update('tests', where='commit_id=$commit_id', doc_results=results,
+              vars=locals())
 
+    
 def delete_test(commit_id):
     db.delete('tests', where="commit_id=$commit_id", vars=locals())
 

@@ -7,6 +7,7 @@ CREATE TABLE tests (
    elapsed_time TEXT,
    platform TEXT,
    results TEXT,
+   doc_results TEXT,
    date TEXT
 );
 

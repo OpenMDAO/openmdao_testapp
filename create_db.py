@@ -1,4 +1,8 @@
+"""
+Creates a new testing database
+"""
 
+import os
 import sys
 import sqlite3
 from optparse import OptionParser
@@ -6,9 +10,11 @@ from optparse import OptionParser
 def main():
     parser = OptionParser()
     parser.add_option("-s", "--schema", action="store", type="string", 
-                      dest='schema', help="schema file")
+                      dest='schema', default='schema.sql',
+                      help='schema file')
     parser.add_option("-d", "--db", action="store", type="string", 
-                      dest='db', help="db file to be created")
+                      dest='db', default='testdb',
+                      help="db file to be created")
     
     (options, args) = parser.parse_args(sys.argv[1:])
 
@@ -16,10 +22,16 @@ def main():
         parser.print_help()
         print "db file must be specified"
         sys.exit(-1)
+    elif os.path.exists(options.db):
+        print 'db file %s already exists' % options.db
+        sys.exit(-1)
 
     if options.schema is None:
         parser.print_help()
         print "schema file must be specified"
+        sys.exit(-1)
+    elif not os.path.exists(options.schema):
+        print "schema file %s doesn't exist" % options.schema
         sys.exit(-1)
 
     f = open(options.schema, 'r')
