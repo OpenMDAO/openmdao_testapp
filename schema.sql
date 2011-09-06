@@ -12,3 +12,8 @@ CREATE TABLE tests (
 );
 
 
+CREATE TABLE docbuilds (
+   commit_id TEXT,
+   results TEXT,
+);
+

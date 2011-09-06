@@ -55,12 +55,21 @@ def new_test(commit_id, results, host,
               host=host, passes=passes, fails=fails,
               elapsed_time=elapsed_time)
     
-def update_doc_info(commit_id, results):
-    db.update('tests', where='commit_id=$commit_id', doc_results=results,
+def get_docbuild(commit_id):
+    try:
+        return db.query('SELECT * from docbuilds WHERE commit_id=$commit_id', 
+                         vars=locals())[0]
+    except IndexError:
+        return None
+
+
+def new_doc_info(commit_id, results):
+    db.insert('docbuilds', where='commit_id=$commit_id', results=results,
               vars=locals())
 
     
 def delete_test(commit_id):
     db.delete('tests', where="commit_id=$commit_id", vars=locals())
+    db.delete('docbuilds', where="commit_id=$commit_id", vars=locals())
 
 

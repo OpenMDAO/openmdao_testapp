@@ -35,11 +35,15 @@ def main():
         sys.exit(-1)
 
     f = open(options.schema, 'r')
-    schema = f.read()
+    schemas = f.read()
     f.close()
     
     conn = sqlite3.connect(options.db)
-    conn.execute(schema)
+    
+    for schema in schemas.split(';'):
+        s = schema.strip()
+        if s:
+            conn.execute(s+';')
 
 if __name__ == '__main__':
     main()

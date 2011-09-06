@@ -1,11 +1,8 @@
-$def with (test, doc_url)
+$def with (bld)
 
-<h2><a href="$doc_url">Docs</a> for commit $test.commit_id</h2>
-
-<h2>Doc Build Results</h2>
-Date: $test.date<br/><br/>
+<h2>Doc Build Results for commit $bld.commit_id</h2>
 
 <p>
-$:fixmulti(test.doc_results)
+$:fixmulti(bld.results)
 </p>
 

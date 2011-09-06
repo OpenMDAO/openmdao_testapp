@@ -81,15 +81,15 @@ class View:
     def GET(self, host, commit_id):
         """ View results for a single commit on a host"""
         test = model.get_test(host, commit_id)
-        return render.view(test, os.path.join(REPO_URL,'commit',commit_id))
+        return render.view(test, os.path.join(APP_URL,'viewdocs'),
+                           os.path.join(REPO_URL,'commit',commit_id))
 
 class ViewDocs:
 
-    def GET(self, host, commit_id):
+    def GET(self, commit_id):
         """ View doc build results for a single commit on a host"""
-        test = model.get_test(host, commit_id)
-        return render.viewdocs(test, os.path.join('http://openmdao.org',
-                                                  'custom_app', 'dev_docs'))
+        bld = model.get_docbuild(commit_id)
+        return render.viewdocs(bld)
 
 class Delete:
 
@@ -165,7 +165,7 @@ def push_docs(commit_id):
     except Exception as err:
         out = str(err)
         ret = -1
-    model.update_doc_info(commit_id, out)
+    model.new_doc_info(commit_id, out)
     return out, ret
 
 
@@ -300,7 +300,7 @@ def process_results(commit_id, returncode, results_dir, output):
             docout = '\n\nDev docs built successfully\n'
     else:
         docout = "\n\nDev docs were not built\n"
-        model.update_doc_info(commit_id, docout)
+        model.new_doc_info(commit_id, docout)
 
     send_mail(commit_id, returncode, output+docout+msg)
 

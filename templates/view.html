@@ -1,7 +1,10 @@
-$def with (test, commit_url)
+$def with (test, docbuild_url, commit_url)
 
 <h2>Results for commit <a href="$commit_url">$test.commit_id</a></h2>
+<h2><a href="$docbuild_url/$test.commit_id">Doc build</a></h2>
+
 Date: $test.date<br/><br/>
+
 
 <p>
 $:fixmulti(test.results)
