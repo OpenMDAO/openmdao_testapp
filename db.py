@@ -6,7 +6,7 @@ from optparse import OptionParser
 def main():
     parser = OptionParser()
     parser.add_option("-d", "--db", action="store", type="string", 
-                      dest='db', help="db file to be created")
+                      dest='db', help="db file")
     
     (options, args) = parser.parse_args(sys.argv[1:])
 

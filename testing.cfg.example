@@ -1,18 +1,40 @@
+# Example testing.cfg file for the OpenMDAO automated testing server
 
 [openmdao_testing]
+# URL of the git repository being tested
 repo_url: https://github.com/OpenMDAO/OpenMDAO-Framework
+
+# directory containing the local clone of the OpenMDAO repo
+# referred to by repo_url
 local_repo_dir: /home/openmdao/install/OpenMDAO-Framework
+
+# Base testing server URL
 app_url: http://blah.org/testingapp
+
+# list of branches where changes will be tested (usually just 'dev')
 repo_branches: foo
 
+# name of the git remote defined in the local git clone that will be
+# used to pull updates
 remote_name: bar
-from_email: somebody@somewhere.org
+
+# the sender's email address for notification emails sent by the server
+from_email: openmdao@openmdao.org
+
+# list of email addresses where notification emails will be sent
 results_emails: blah@blah.com
     foo@foobar.org
 
+# which python to use to run subprocesses
 py: python2.6
+
+# list of hosts to run tests on.  These host names must be defined in the
+# ~/.openmdao/testhosts.cfg file
 hosts: meerkat32_instance
 
+# args passed to openmdao_test on the test hosts. Usually this will be blank
+# (which means to run the full unit test suite), but for debugging purposes
+# it can be useful to specify test options here.
 test_args: --
    -v
    openmdao.util.test.test_namelist
