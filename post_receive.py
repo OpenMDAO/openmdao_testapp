@@ -254,8 +254,6 @@ def test_commit(payload):
     
     cmd = ['test_branch', 
            '-o', tmp_results_dir,
-           '-f', repo+'.git',
-           '-b', branch,
            ]
     for host in HOSTS:
         cmd.append('--host=%s' % host)
