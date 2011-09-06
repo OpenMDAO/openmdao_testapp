@@ -296,13 +296,17 @@ def process_results(commit_id, returncode, results_dir, output):
         except Exception as err:
             model.new_test(commit_id, str(err), host)
 
-    if returncode == 0:
-        docout, returncode = push_docs(commit_id)  # update the dev docs if the tests passed
+    try:
         if returncode == 0:
-            docout = '\n\nDev docs built successfully\n'
-    else:
-        docout = "\n\nDev docs were not built\n"
-        model.new_doc_info(commit_id, docout)
+            docout, returncode = push_docs(commit_id)  # update the dev docs if the tests passed
+            if returncode == 0:
+                docout = '\n\nDev docs built successfully\n'
+        else:
+            docout = "\n\nDev docs were not built\n"
+            model.new_doc_info(commit_id, docout)
+    except Exception as err:
+        returncode = -1
+        docout = str(err)
 
     send_mail(commit_id, returncode, output+docout+msg)
 
