@@ -14,6 +14,7 @@ import StringIO
 import subprocess
 import time
 import re
+import atexit
 from threading import Thread
 from Queue import Queue
 import ConfigParser
@@ -189,27 +190,39 @@ def send_mail(commit_id, retval, msg, sender=FROM_EMAIL,
 
 def set_branch(branch, commit_id, repodir):
     """Set the local repo to the specified branch as long as the local
-    repo is clean, and then pull the latest changes from the remote
-    branch.
+    repo is clean, pull the latest changes from the remote
+    branch, and rebuild the dev environment.
     """
     if _has_checkouts(repodir):
         send_mail(commit_id, -1, 'branch %s is not clean in repo %s!' % (branch,
                                                                          repodir))
-        return
+        return -1
     
     cmd = 'git checkout %s' % branch
     out, ret = _run_sub(cmd, shell=True, cwd=repodir)
     print out
     if ret != 0:
         send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
-        return
+        return ret
     
     cmd = 'git pull %s %s' % (REMOTE_NAME, branch)
     out, ret = _run_sub(cmd, shell=True, cwd=repodir)
     print out
     if ret != 0:
         send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
-        return
+        return ret
+    
+    shutil.rmtree(os.path.join(repodir, 'devenv'))
+    
+    print 'rebuilding dev environment for commit %s on branch %s' % (commit_id, 
+                                                                     branch)
+    cmd = '%s go-openmdao-dev.py' % PY
+    out, ret = _run_sub(cmd, shell=True, cwd=repodir)
+    print out
+    if ret != 0:
+        send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
+    return ret
+
 
 def test_commit(payload):
     """Run the test suite on the commit specified in payload."""
@@ -233,12 +246,16 @@ def test_commit(payload):
         print "commit %s has already been tested" % commit_id
         return -1
     
-    set_branch(branch, commit_id, LOCAL_REPO_DIR)
+    ret = set_branch(branch, commit_id, LOCAL_REPO_DIR)
+    if ret != 0:
+        return ret
 
     tmp_results_dir = os.path.join(RESULTS_DIR, commit_id)
     
     cmd = ['test_branch', 
            '-o', tmp_results_dir,
+           '-f', repo+'.git',
+           '-b', branch,
            ]
     for host in HOSTS:
         cmd.append('--host=%s' % host)
@@ -256,6 +273,7 @@ def test_commit(payload):
         shutil.rmtree(tmp_results_dir)
         
     return ret
+
 
 def parse_test_output(output):
     """Given a string of test results, try to extract the following:
@@ -311,6 +329,7 @@ def process_results(commit_id, returncode, results_dir, output):
     send_mail(commit_id, returncode, output+docout+msg)
 
         
+    
 if __name__ == "__main__":
     
     tester = Thread(target=do_tests, name='tester', args=(commit_queue,))
