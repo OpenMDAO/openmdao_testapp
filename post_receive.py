@@ -92,7 +92,10 @@ class ViewDocs:
     def GET(self, commit_id):
         """ View doc build results for a single commit on a host"""
         bld = model.get_docbuild(commit_id)
-        return render.viewdocs(bld)
+        if bld is None:
+            return "Docs are not available yet"
+        else:
+            return render.viewdocs(bld)
 
 class Delete:
 
