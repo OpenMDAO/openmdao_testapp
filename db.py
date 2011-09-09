@@ -23,9 +23,8 @@ def main():
     cur = conn.cursor()
     cur.execute(cmd)
     
-    print 'TABLES:'
     for n in cur:
-        print 'Table %s' % n[0]
+        print '\nTable %s' % n[0]
         cur2 = conn.cursor()
         cur2.execute("SELECT * from %s;" % n[0])
         for result in cur2:
