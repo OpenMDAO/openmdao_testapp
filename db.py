@@ -22,32 +22,20 @@ def main():
     cmd = "SELECT name from sqlite_master WHERE type='table' ORDER BY name;"
     cur = conn.cursor()
     cur.execute(cmd)
-    cur2 = conn.cursor()
-    
-    tables = []
     
     print 'TABLES:'
     for n in cur:
-        print n[0]
-        tables.append(n[0])
-        cmd = "SELECT * from %s;" % n[0]
-        cur2.execute(cmd)
-        for v in cur2:
-            print v
-            
-    print '\n'
-    for tab in tables:
-        cur = conn.cursor()
-        cur.execute('SELECT * from %s' % tab)
-        for result in cur:
+        print 'Table %s' % n[0]
+        cur2 = conn.cursor()
+        cur2.execute("SELECT * from %s;" % n[0])
+        for result in cur2:
             for r in result:
                 if isinstance(r, basestring):
-                    print r[0:50],
+                    print r[0:50],', ',
                 else:
-                    print r,
+                    print r,', ',
             print ''
-
-
+            
 
 if __name__ == '__main__':
     main()
