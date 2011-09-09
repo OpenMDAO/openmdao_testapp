@@ -3,6 +3,8 @@ import sys
 import sqlite3
 from optparse import OptionParser
 
+import model
+
 def main():
     parser = OptionParser()
     parser.add_option("-d", "--db", action="store", type="string", 
@@ -21,12 +23,16 @@ def main():
     cur = conn.cursor()
     cur.execute(cmd)
     cur2 = conn.cursor()
+    print 'TABLES:'
     for n in cur:
         print n
         cmd = "SELECT * from %s;" % n
         cur2.execute(cmd)
         for v in cur2:
             print v
+            
+    
+    model.dump()
 
 
 

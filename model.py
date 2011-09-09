@@ -72,3 +72,22 @@ def delete_test(commit_id):
     db.delete('docbuilds', where="commit_id=$commit_id", vars=locals())
 
 
+def dump():
+    print 'Tests:'
+    tests = db.select('tests', order='date DESC')
+    for test in tests:
+        print "%s  %s  p:%s  f:%s t:%s plat:%s date:%s" % (test.commit_id,
+                                                           test.host,
+                                                           test.passes,
+                                                           test.fails,
+                                                           test.elapsed_time,
+                                                           test.platform,
+                                                           test.date)
+                                                                                                                      
+    print 'Docbuilds:'
+    tests = db.select('docbuilds')
+    for test in tests:
+        print "%s  %s" % (test.commit_id, test.results[0:50])
+        
+
+
