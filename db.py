@@ -35,10 +35,10 @@ def main():
         for v in cur2:
             print v
             
-    
+    print '\n'
     for tab in tables:
         cur = conn.cursor()
-        cur.execute('SELECT * from %s')
+        cur.execute('SELECT * from %s' % tab)
         for result in cur:
             for r in result:
                 if isinstance(r, basestring):
