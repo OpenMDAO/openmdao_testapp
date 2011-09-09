@@ -208,7 +208,7 @@ def set_branch(branch, commit_id, repodir):
         send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
         return ret
     
-    cmd = 'git pull %s %s' % (REMOTE_NAME, branch)
+    cmd = 'git pull --tags %s %s' % (REMOTE_NAME, branch)
     out, ret = _run_sub(cmd, shell=True, cwd=repodir)
     print out
     if ret != 0:
