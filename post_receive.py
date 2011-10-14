@@ -215,8 +215,11 @@ def set_branch(branch, commit_id, repodir):
         send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
         return ret
     
-    shutil.rmtree(os.path.join(repodir, 'devenv'))
-    
+    try:
+        shutil.rmtree(os.path.join(repodir, 'devenv'))
+    except Exception as err:
+        print str(err)
+
     print 'rebuilding dev environment for commit %s on branch %s' % (commit_id, 
                                                                      branch)
     cmd = '%s go-openmdao-dev.py' % PY
