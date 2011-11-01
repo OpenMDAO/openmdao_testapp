@@ -52,7 +52,7 @@ def new_test(commit_id, results, host,
              passes=0, fails=0, elapsed_time='unknown'):
     db.insert('tests', commit_id=commit_id, results=results, 
               date=datetime.datetime.utcnow(),
-              host=host, passes=passes, fails=fails,
+              host=host, passes=passes, fails=fails, skips=skips,
               elapsed_time=elapsed_time)
     
 def get_docbuild(commit_id):

@@ -4,6 +4,7 @@ CREATE TABLE tests (
    host TEXT,
    passes INTEGER,
    fails INTEGER,
+   skips INTEGER,
    elapsed_time TEXT,
    platform TEXT,
    results TEXT,

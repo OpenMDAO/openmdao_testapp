@@ -299,8 +299,13 @@ def parse_test_output(output):
             parts = fail.group(1).split(',')
             for part in parts:
                 fails += int(part.split('=')[1])
+        skipped = re.search('SKIP=([0-9]+)', last)
+        if skipped:
+            skips = int(skipped.group(1))
+        else:
+            skips = 0
     
-    return (numtests-fails, fails, elapsed_time)
+    return (numtests-fails-skips, fails, skips, elapsed_time)
 
 
 def process_results(commit_id, returncode, results_dir, output):
@@ -311,9 +316,9 @@ def process_results(commit_id, returncode, results_dir, output):
         try:
             with open(os.path.join(results_dir, host, 'run.out'), 'r') as f:
                 results = f.read()
-                passes, fails, elapsed_time = parse_test_output(results)
+                passes, fails, skips, elapsed_time = parse_test_output(results)
                 model.new_test(commit_id, results, host,
-                               passes=passes, fails=fails, 
+                               passes=passes, fails=fails, skips=skips,
                                elapsed_time=elapsed_time)
         except Exception as err:
             model.new_test(commit_id, str(err), host)
