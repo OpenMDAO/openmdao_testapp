@@ -284,9 +284,9 @@ def parse_test_output(output):
         number of passing tests,
         number of failing tests,
         total elapsed time
-    Returns a tuple of the form (passes, fails, elapsed_time)
+    Returns a tuple of the form (passes, fails, skips, elapsed_time)
     """
-    numtests = fails = 0
+    numtests = fails = skips = 0
     elapsed_time = 'unknown'
     
     last = output[-1024:]

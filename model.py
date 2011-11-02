@@ -20,7 +20,7 @@ def get_commits():
         if test.commit_id in commitdict:
             obj = commitdict[test.commit_id]
         else:
-            obj = Storage(passes=0, fails=0, 
+            obj = Storage(passes=0, fails=0, skips=0,
                           commit_id=test.commit_id, date=test.date)
             commits.append(obj)
             commitdict[test.commit_id] = obj
@@ -49,7 +49,7 @@ def get_test(host, commit_id):
         return None
 
 def new_test(commit_id, results, host, 
-             passes=0, fails=0, elapsed_time='unknown'):
+             passes=0, fails=0, skips=0, elapsed_time='unknown'):
     db.insert('tests', commit_id=commit_id, results=results, 
               date=datetime.datetime.utcnow(),
               host=host, passes=passes, fails=fails, skips=skips,
@@ -76,14 +76,15 @@ def dump():
     print 'Tests:'
     tests = db.select('tests', order='date DESC')
     for test in tests:
-        print "%s  %s  p:%s  f:%s t:%s plat:%s date:%s" % (test.commit_id,
-                                                           test.host,
-                                                           test.passes,
-                                                           test.fails,
-                                                           test.elapsed_time,
-                                                           test.platform,
-                                                           test.date)
-                                                                                                                      
+        print "%s  %s  p:%s  f:%s  s:%s t:%s plat:%s date:%s" % (test.commit_id,
+                                                                 test.host,
+                                                                 test.passes,
+                                                                 test.fails,
+                                                                 test.skips,
+                                                                 test.elapsed_time,
+                                                                 test.platform,
+                                                                 test.date)
+
     print 'Docbuilds:'
     tests = db.select('docbuilds')
     for test in tests:
