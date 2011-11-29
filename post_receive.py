@@ -181,7 +181,7 @@ def do_tests(q):
         payload = q.get(block=True)
         try:
             retval = test_commit(payload)
-        except Exception as err:
+        except (Exception, SystemExit) as err:
             print str(err)
 
 def send_mail(commit_id, retval, msg, sender=FROM_EMAIL, 
@@ -270,7 +270,7 @@ def test_commit(payload):
     try:
         out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
         process_results(commit_id, ret, tmp_results_dir, out)
-    except Exception as err:
+    except (Exception, SystemExit) as err:
         ret = -1
         process_results(commit_id, ret, tmp_results_dir, str(err))
     finally:
@@ -316,10 +316,10 @@ def process_results(commit_id, returncode, results_dir, output):
         try:
             with open(os.path.join(results_dir, host, 'run.out'), 'r') as f:
                 results = f.read()
-                passes, fails, skips, elapsed_time = parse_test_output(results)
-                model.new_test(commit_id, results, host,
-                               passes=passes, fails=fails, skips=skips,
-                               elapsed_time=elapsed_time)
+            passes, fails, skips, elapsed_time = parse_test_output(results)
+            model.new_test(commit_id, results, host,
+                           passes=passes, fails=fails, skips=skips,
+                           elapsed_time=elapsed_time)
         except Exception as err:
             model.new_test(commit_id, str(err), host)
 
