@@ -12,6 +12,8 @@ import json
 import pprint
 import StringIO
 import subprocess
+import tarfile
+import fnmatch
 import time
 import re
 import atexit
@@ -23,14 +25,15 @@ import web
 
 import model
 
+from openmdao.util.git import download_github_tar
+
 APP_DIR = model.APP_DIR
-RESULTS_DIR = os.path.join(APP_DIR, 'host_results')
 
 config = ConfigParser.ConfigParser()
 config.readfp(open(os.path.join(APP_DIR, 'testing.cfg'), 'r'))
 
 REPO_URL = config.get('openmdao_testing', 'repo_url')
-LOCAL_REPO_DIR = config.get('openmdao_testing', 'local_repo_dir')
+#LOCAL_REPO_DIR = config.get('openmdao_testing', 'local_repo_dir')
 APP_URL = config.get('openmdao_testing', 'app_url')
 REPO_BRANCHES = [s.strip() for s in config.get('openmdao_testing', 
                                                'repo_branches').split('\n')]
@@ -47,7 +50,6 @@ TEST_ARGS = [s.strip() for s in config.get('openmdao_testing',
 DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location')
 
 commit_queue = Queue()
-
 
 def fixmulti(txt):
     """adds unescaped html line breaks"""
@@ -115,21 +117,21 @@ class Run:
 
 ########################################################################
 
-def _has_checkouts(repodir):
-    cmd = 'git status -s'
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
-                         env=os.environ, shell=True, cwd=repodir)
-    out = p.communicate()[0]
-    ret = p.returncode
-    if ret != 0:
-        raise RuntimeError(
-             'error while getting status of git repository from directory %s (return code=%d): %s'
-              % (os.getcwd(), ret, out))
-    for line in out.split('\n'):
-        line = line.strip()
-        if len(line)>1 and not line.startswith('?'):
-            return True
-    return False
+#def _has_checkouts(repodir):
+    #cmd = 'git status -s'
+    #p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
+                         #env=os.environ, shell=True, cwd=repodir)
+    #out = p.communicate()[0]
+    #ret = p.returncode
+    #if ret != 0:
+        #raise RuntimeError(
+             #'error while getting status of git repository from directory %s (return code=%d): %s'
+              #% (os.getcwd(), ret, out))
+    #for line in out.split('\n'):
+        #line = line.strip()
+        #if len(line)>1 and not line.startswith('?'):
+            #return True
+    #return False
 
 def activate_and_run(envdir, cmd):
     """"
@@ -163,11 +165,20 @@ def _run_sub(cmd, **kwargs):
     output = p.communicate()[0]
     return (output, p.returncode)
 
+def get_env_dir(commit_id):
+    repo_dir = os.path.join(APP_DIR, commit_id, 'repo')
+    for f in os.listdir(repo_dir):
+        if os.path.isdir(os.path.join(repo_dir, f)) and \
+                f.startswith('OpenMDAO-OpenMDAO-Framework'):
+            return os.path.join(repo_dir, f, 'devenv')
+   
+    raise RuntimeError("Couldn't locate source tree for commit %s" % commit_id)
+
 
 def push_docs(commit_id):
     cmd = ['push_docs', '-d', DEVDOCS_DIR, 'web103.webfaction.com']
     try:
-        out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
+        out, ret = activate_and_run(get_env_dir(commit_id), cmd)
     except Exception as err:
         out = str(err)
         ret = -1
@@ -191,47 +202,11 @@ def send_mail(commit_id, retval, msg, sender=FROM_EMAIL,
                  'test %s for commit %s' % (status, commit_id),
                  msg)
 
-def set_branch(branch, commit_id, repodir):
-    """Set the local repo to the specified branch as long as the local
-    repo is clean, pull the latest changes from the remote
-    branch, and rebuild the dev environment.
-    """
-    if _has_checkouts(repodir):
-        send_mail(commit_id, -1, 'branch %s is not clean in repo %s!' % (branch,
-                                                                         repodir))
-        return -1
-    
-    cmd = 'git checkout %s' % branch
-    out, ret = _run_sub(cmd, shell=True, cwd=repodir)
-    print out
-    if ret != 0:
-        send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
-        return ret
-    
-    cmd = 'git pull --tags %s %s' % (REMOTE_NAME, branch)
-    out, ret = _run_sub(cmd, shell=True, cwd=repodir)
-    print out
-    if ret != 0:
-        send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
-        return ret
-    
-    try:
-        shutil.rmtree(os.path.join(repodir, 'devenv'))
-    except Exception as err:
-        print str(err)
-
-    print 'rebuilding dev environment for commit %s on branch %s' % (commit_id, 
-                                                                     branch)
-    cmd = '%s go-openmdao-dev.py' % PY
-    out, ret = _run_sub(cmd, shell=True, cwd=repodir)
-    print out
-    if ret != 0:
-        send_mail(commit_id, ret, "command '%s' failed:\n%s" % (cmd, out))
-    return ret
-
-
 def test_commit(payload):
     """Run the test suite on the commit specified in payload."""
+    
+    startdir = os.getcwd()
+    
     repo = payload['repository']['url']
     commit_id = payload['after']
     branch = payload['ref'].split('/')[-1]
@@ -252,11 +227,8 @@ def test_commit(payload):
         print "commit %s has already been tested" % commit_id
         return -1
     
-    ret = set_branch(branch, commit_id, LOCAL_REPO_DIR)
-    if ret != 0:
-        return ret
-
-    tmp_results_dir = os.path.join(RESULTS_DIR, commit_id)
+    tmp_results_dir = os.path.join(APP_DIR, commit_id, 'host_results')
+    tmp_repo_dir = os.path.join(APP_DIR, commit_id, 'repo')
     
     cmd = ['test_branch', 
            '-o', tmp_results_dir,
@@ -267,14 +239,27 @@ def test_commit(payload):
     cmd += TEST_ARGS
     
     os.makedirs(tmp_results_dir)
+    os.makedirs(tmp_repo_dir)
+    
+    # grab a copy of the commit
+    print "downloading source tarball from github for commit %s" % commit_id
+    tarpath = download_github_tar(org_name, repo_name, version, dest=tmp_repo_dir)
+    os.chdir(tmp_repo_dir)
     try:
-        out, ret = activate_and_run(os.path.join(LOCAL_REPO_DIR,'devenv'), cmd)
+        tar = tarfile.open(tarpath)
+        tar.extractall()
+        tar.close()
+    finally:
+        os.chdir(startdir)
+
+    try:
+        out, ret = activate_and_run(get_env_dir(commit_id), cmd)
         process_results(commit_id, ret, tmp_results_dir, out)
     except (Exception, SystemExit) as err:
         ret = -1
         process_results(commit_id, ret, tmp_results_dir, str(err))
     finally:
-        shutil.rmtree(tmp_results_dir)
+        shutil.rmtree(os.path.join(APP_DIR, commit_id))
         
     return ret
 
