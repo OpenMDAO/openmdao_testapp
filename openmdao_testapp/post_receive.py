@@ -37,7 +37,6 @@ REPO_URL = config.get('openmdao_testing', 'repo_url')
 APP_URL = config.get('openmdao_testing', 'app_url')
 REPO_BRANCHES = [s.strip() for s in config.get('openmdao_testing', 
                                                'repo_branches').split('\n')]
-REMOTE_NAME = config.get('openmdao_testing', 'remote_name')
 FROM_EMAIL = config.get('openmdao_testing', 'from_email')
 RESULTS_EMAILS = [s.strip() for s in config.get('openmdao_testing', 
                                                 'results_emails').split('\n')]
@@ -47,7 +46,7 @@ HOSTS = [s.strip() for s in config.get('openmdao_testing',
 TEST_ARGS = [s.strip() for s in config.get('openmdao_testing', 
                                            'test_args').split('\n')]
 
-DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location')
+DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location').strip()
 
 commit_queue = Queue()
 
@@ -176,14 +175,17 @@ def get_env_dir(commit_id):
 
 
 def push_docs(commit_id):
-    cmd = ['push_docs', '-d', DEVDOCS_DIR, 'web103.webfaction.com']
-    try:
-        out, ret = activate_and_run(get_env_dir(commit_id), cmd)
-    except Exception as err:
-        out = str(err)
-        ret = -1
-    model.new_doc_info(commit_id, out)
-    return out, ret
+    if DEVDOCS_DIR:
+        cmd = ['push_docs', '-d', DEVDOCS_DIR, 'web103.webfaction.com']
+        try:
+            out, ret = activate_and_run(get_env_dir(commit_id), cmd)
+        except Exception as err:
+            out = str(err)
+            ret = -1
+        model.new_doc_info(commit_id, out)
+        return out, ret
+    else:
+        return '', 0 # allow update of production dev docs to be turned off during debugging
 
 
 def do_tests(q):
