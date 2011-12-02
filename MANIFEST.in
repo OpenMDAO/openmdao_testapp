@@ -1,0 +1,3 @@
+recursive-include openmdao_testapp *server *.example *.sql
+recursive-include openmdao_testapp/templates *.html
+
