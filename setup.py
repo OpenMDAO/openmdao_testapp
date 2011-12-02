@@ -9,10 +9,11 @@ setup(name='openmdao_testapp',
       include_package_data = True,
       install_requires=[
           'openmdao.devtools',
+          'argparse',
       ],
       entry_points = {
-         "nose.plugins": [
-             "coverage2 = nosecoverage2.cover2:Coverage2"
+         "console_scripts": [
+             "send_payload = openmdao_testapp.test.test_hook:send_payload"
          ]
       },
    )
