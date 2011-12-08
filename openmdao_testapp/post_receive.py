@@ -176,7 +176,8 @@ def get_env_dir(commit_id):
 
 def push_docs(commit_id):
     if DEVDOCS_DIR:
-        cmd = ['push_docs', '-d', DEVDOCS_DIR, 'web103.webfaction.com']
+        cmd = ['openmdao', 'push_docs', '-d', DEVDOCS_DIR, 
+               'web103.webfaction.com']
         try:
             out, ret = activate_and_run(get_env_dir(commit_id), cmd)
         except Exception as err:
