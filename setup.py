@@ -10,6 +10,7 @@ setup(name='openmdao_testapp',
       install_requires=[
           'openmdao.devtools',
           'argparse',
+          'web.py'
       ],
       entry_points = {
          "console_scripts": [

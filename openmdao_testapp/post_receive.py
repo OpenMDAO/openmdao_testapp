@@ -44,7 +44,7 @@ PY = config.get('openmdao_testing', 'py')
 HOSTS = [s.strip() for s in config.get('openmdao_testing', 
                                        'hosts').split('\n')]
 TEST_ARGS = [s.strip() for s in config.get('openmdao_testing', 
-                                           'test_args').split('\n')]
+                                           'test_args').split('\n') if s.strip()]
 
 DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location').strip()
 
@@ -116,21 +116,6 @@ class Run:
 
 ########################################################################
 
-#def _has_checkouts(repodir):
-    #cmd = 'git status -s'
-    #p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
-                         #env=os.environ, shell=True, cwd=repodir)
-    #out = p.communicate()[0]
-    #ret = p.returncode
-    #if ret != 0:
-        #raise RuntimeError(
-             #'error while getting status of git repository from directory %s (return code=%d): %s'
-              #% (os.getcwd(), ret, out))
-    #for line in out.split('\n'):
-        #line = line.strip()
-        #if len(line)>1 and not line.startswith('?'):
-            #return True
-    #return False
 
 def activate_and_run(envdir, cmd):
     """"
@@ -171,13 +156,13 @@ def get_env_dir(commit_id):
                 f.startswith('OpenMDAO-OpenMDAO-Framework'):
             return os.path.join(repo_dir, f, 'devenv')
    
-    raise RuntimeError("Couldn't locate source tree for commit %s" % commit_id)
+    raise OSError("Couldn't locate source tree for commit %s" % commit_id)
 
 
 def push_docs(commit_id):
     if DEVDOCS_DIR:
         cmd = ['openmdao', 'push_docs', '-d', DEVDOCS_DIR, 
-               'web103.webfaction.com']
+               'openmdao@web103.webfaction.com']
         try:
             out, ret = activate_and_run(get_env_dir(commit_id), cmd)
         except Exception as err:
@@ -201,9 +186,34 @@ def do_tests(q):
 def send_mail(commit_id, retval, msg, sender=FROM_EMAIL, 
               dest_emails=RESULTS_EMAILS):
     status = 'succeeded' if retval == 0 else 'failed'
-    web.sendmail(sender, dest_emails,
-                 'test %s for commit %s' % (status, commit_id),
-                 msg)
+    try:
+        web.sendmail(sender, dest_emails,
+                     'test %s for commit %s' % (status, commit_id),
+                     msg)
+    except OSError as err:
+        print str(err)
+        print "ERROR: failed to send notification email"
+        
+        
+def build_environment(commit_id):
+    print 'building local environment'
+    envdir = get_env_dir(commit_id)
+    tardir = os.path.dirname(envdir)
+    startdir = os.getcwd()
+    os.chdir(tardir)
+    try:
+        p = subprocess.Popen([PY, 'go-openmdao-dev.py', '--gui'],
+                             cwd=os.getcwd(), shell=True)
+        p.wait()
+        ret = p.returncode
+    except Exception as err:
+        print str(err)
+        ret = -1
+    finally:
+        os.chdir(startdir)
+    if ret != 0:
+        print "ERROR building local environment. return code=%s" % ret
+    return ret
 
 def test_commit(payload):
     """Run the test suite on the commit specified in payload."""
@@ -232,31 +242,46 @@ def test_commit(payload):
     
     tmp_results_dir = os.path.join(APP_DIR, commit_id, 'host_results')
     tmp_repo_dir = os.path.join(APP_DIR, commit_id, 'repo')
-    
-    cmd = ['test_branch', 
-           '-o', tmp_results_dir,
-           ]
-    for host in HOSTS:
-        cmd.append('--host=%s' % host)
-        
-    cmd += TEST_ARGS
-    
     os.makedirs(tmp_results_dir)
     os.makedirs(tmp_repo_dir)
     
     # grab a copy of the commit
     print "downloading source tarball from github for commit %s" % commit_id
-    tarpath = download_github_tar(org_name, repo_name, version, dest=tmp_repo_dir)
-    os.chdir(tmp_repo_dir)
-    try:
-        tar = tarfile.open(tarpath)
-        tar.extractall()
-        tar.close()
-    finally:
-        os.chdir(startdir)
+    prts = repo.split('/')
+    repo_name = prts[-1]
+    org_name = prts[-2]
+    tarpath = download_github_tar(org_name, repo_name, commit_id, dest=tmp_repo_dir)
 
+    cmd = ['openmdao', 'test_branch', 
+           '-o', tmp_results_dir,
+           '-f', tarpath,
+           ]
+    for host in HOSTS:
+        cmd.append('--host=%s' % host)
+        
+    if TEST_ARGS:
+        cmd.append('--testargs="%s"' % ' '.join(TEST_ARGS))
+    
     try:
-        out, ret = activate_and_run(get_env_dir(commit_id), cmd)
+        print 'cmd = ',' '.join(cmd)
+        out, ret = _run_sub(cmd, env=os.environ.copy(), cwd=os.getcwd())
+        print 'test_branch return code = %s' % ret
+        
+        # untar the repo tarfile
+        print 'untarring test repo locally'
+        os.chdir(tmp_repo_dir)
+        try:
+            tar = tarfile.open(tarpath)
+            tar.extractall()
+            tar.close()
+        finally:
+            os.chdir(startdir)
+        print 'untar successful'
+            
+        bldret = build_environment(commit_id)
+        if ret == 0:
+            ret = bldret
+
         process_results(commit_id, ret, tmp_results_dir, out)
     except (Exception, SystemExit) as err:
         ret = -1
@@ -334,15 +359,21 @@ if __name__ == "__main__":
     tester.start()
     
     ### Url mappings
-    
+
+    if 'test' in sys.argv:
+        top = '/p_r/'
+    else:
+        top = '/'
+
     urls = (
-        '/', 'Index',
-        '/run', 'Run',
-        '/view/(\w+)/(\w+)', 'View',
-        '/viewdocs/(\w+)', 'ViewDocs',
-        '/hosts/(\w+)', 'Hosts',
-        '/delete/(\w+)', 'Delete',
+        top, 'Index',
+        top+'run', 'Run',
+        top+'view/(\w+)/(\w+)', 'View',
+        top+'viewdocs/(\w+)', 'ViewDocs',
+        top+'hosts/(\w+)', 'Hosts',
+        top+'delete/(\w+)', 'Delete',
     )
+    
 
     app = web.application(urls, globals())
     app.run()
