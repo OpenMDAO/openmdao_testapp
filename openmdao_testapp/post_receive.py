@@ -14,6 +14,7 @@ import StringIO
 import subprocess
 import tarfile
 import fnmatch
+import tempfile
 import time
 import re
 import atexit
@@ -32,6 +33,8 @@ APP_DIR = model.APP_DIR
 config = ConfigParser.ConfigParser()
 config.readfp(open(os.path.join(APP_DIR, 'testing.cfg'), 'r'))
 
+TOP = config.get('openmdao_testing', 'top')
+PORT = config.get('openmdao_testing', 'port')
 REPO_URL = config.get('openmdao_testing', 'repo_url')
 #LOCAL_REPO_DIR = config.get('openmdao_testing', 'local_repo_dir')
 APP_URL = config.get('openmdao_testing', 'app_url')
@@ -47,6 +50,9 @@ TEST_ARGS = [s.strip() for s in config.get('openmdao_testing',
                                            'test_args').split('\n') if s.strip()]
 
 DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location').strip()
+
+# map of commit id to temp directory
+directory_map = {}
 
 commit_queue = Queue()
 
@@ -127,7 +133,7 @@ def activate_and_run(envdir, cmd):
     if sys.platform.startswith('win'):
         command = ['Scripts/activate.bat',  '&&'] + cmd
     else:
-        command = ['source ./bin/activate', '&&'] + cmd
+        command = ['.', './bin/activate', '&&'] + cmd
     
     # activate the environment and run command
     
@@ -150,7 +156,7 @@ def _run_sub(cmd, **kwargs):
     return (output, p.returncode)
 
 def get_env_dir(commit_id):
-    repo_dir = os.path.join(APP_DIR, commit_id, 'repo')
+    repo_dir = os.path.join(get_commit_dir(commit_id), 'repo')
     for f in os.listdir(repo_dir):
         if os.path.isdir(os.path.join(repo_dir, f)) and \
                 f.startswith('OpenMDAO-OpenMDAO-Framework'):
@@ -163,14 +169,20 @@ def push_docs(commit_id):
     if DEVDOCS_DIR:
         cmd = ['openmdao', 'push_docs', '-d', DEVDOCS_DIR, 
                'openmdao@web103.webfaction.com']
+        print 'push_docs command = %s' % ' '.join(cmd)
         try:
             out, ret = activate_and_run(get_env_dir(commit_id), cmd)
         except Exception as err:
             out = str(err)
             ret = -1
         model.new_doc_info(commit_id, out)
+        if ret == 0:
+            print 'push_docs was successful'
+        else:
+            print 'ERROR: push_docs failed'
         return out, ret
     else:
+        print 'push_docs was skipped'
         return '', 0 # allow update of production dev docs to be turned off during debugging
 
 
@@ -194,16 +206,17 @@ def send_mail(commit_id, retval, msg, sender=FROM_EMAIL,
         print str(err)
         print "ERROR: failed to send notification email"
         
-        
 def build_environment(commit_id):
     print 'building local environment'
     envdir = get_env_dir(commit_id)
     tardir = os.path.dirname(envdir)
     startdir = os.getcwd()
+    cmd = [PY, 'go-openmdao-dev.py', '--gui']
     os.chdir(tardir)
     try:
-        p = subprocess.Popen([PY, 'go-openmdao-dev.py', '--gui'],
-                             cwd=os.getcwd(), shell=True)
+        print 'running command: ',' '.join(cmd)
+        p = subprocess.Popen(cmd, cwd=os.getcwd())
+        #p = subprocess.Popen('%s %s %s' % tuple(cmd), shell=True)
         p.wait()
         ret = p.returncode
     except Exception as err:
@@ -211,9 +224,16 @@ def build_environment(commit_id):
         ret = -1
     finally:
         os.chdir(startdir)
-    if ret != 0:
+    if ret == 0:
+        print 'local build successful'
+    else:
         print "ERROR building local environment. return code=%s" % ret
     return ret
+
+def get_commit_dir(commit_id):
+    if commit_id not in directory_map:
+        directory_map[commit_id] = tempfile.mkdtemp()
+    return directory_map[commit_id]
 
 def test_commit(payload):
     """Run the test suite on the commit specified in payload."""
@@ -240,8 +260,8 @@ def test_commit(payload):
         print "commit %s has already been tested" % commit_id
         return -1
     
-    tmp_results_dir = os.path.join(APP_DIR, commit_id, 'host_results')
-    tmp_repo_dir = os.path.join(APP_DIR, commit_id, 'repo')
+    tmp_results_dir = os.path.join(get_commit_dir(commit_id), 'host_results')
+    tmp_repo_dir = os.path.join(get_commit_dir(commit_id), 'repo')
     os.makedirs(tmp_results_dir)
     os.makedirs(tmp_repo_dir)
     
@@ -263,12 +283,14 @@ def test_commit(payload):
         cmd.append('--testargs="%s"' % ' '.join(TEST_ARGS))
     
     try:
-        print 'cmd = ',' '.join(cmd)
-        out, ret = _run_sub(cmd, env=os.environ.copy(), cwd=os.getcwd())
-        print 'test_branch return code = %s' % ret
+        ret = 0
+        out = ''
+        #print 'cmd = ',' '.join(cmd)
+        #out, ret = _run_sub(cmd, env=os.environ.copy(), cwd=os.getcwd())
+        #print 'test_branch return code = %s' % ret
         
         # untar the repo tarfile
-        print 'untarring test repo locally'
+        print 'untarring repo locally so we can build the docs'
         os.chdir(tmp_repo_dir)
         try:
             tar = tarfile.open(tarpath)
@@ -284,10 +306,14 @@ def test_commit(payload):
 
         process_results(commit_id, ret, tmp_results_dir, out)
     except (Exception, SystemExit) as err:
+        print 'ERROR during local build: %s' % str(err)
         ret = -1
         process_results(commit_id, ret, tmp_results_dir, str(err))
     finally:
-        shutil.rmtree(os.path.join(APP_DIR, commit_id))
+        d = get_commit_dir(commit_id)
+        del directory_map[commit_id]
+        print 'removing temp commit directory %s' % d
+        shutil.rmtree(d)
         
     return ret
 
@@ -360,21 +386,18 @@ if __name__ == "__main__":
     
     ### Url mappings
 
-    if 'test' in sys.argv:
-        top = '/p_r/'
-    else:
-        top = '/'
-
     urls = (
-        top, 'Index',
-        top+'run', 'Run',
-        top+'view/(\w+)/(\w+)', 'View',
-        top+'viewdocs/(\w+)', 'ViewDocs',
-        top+'hosts/(\w+)', 'Hosts',
-        top+'delete/(\w+)', 'Delete',
+        TOP, 'Index',
+        TOP+'run', 'Run',
+        TOP+'view/(\w+)/(\w+)', 'View',
+        TOP+'viewdocs/(\w+)', 'ViewDocs',
+        TOP+'hosts/(\w+)', 'Hosts',
+        TOP+'delete/(\w+)', 'Delete',
     )
     
-
+    sys.argv.append(PORT)
+    print sys.argv
+    
     app = web.application(urls, globals())
     app.run()
 

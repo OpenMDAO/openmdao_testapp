@@ -1,2 +1,2 @@
 ps -ef | grep post_receive | grep -v grep | awk '{print $2}' | xargs kill 
-python2.6 post_receive.py 47738  > logfile 2>&1 &
+python2.6 post_receive.py > server.log 2>&1 &

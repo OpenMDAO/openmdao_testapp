@@ -1,7 +1,19 @@
 This is a webapp to manage automated testing of the OpenMDAO-Framework 
 repository.
 
+Everything is driven by a config file called testing.cfg.  
+A testing.cfg.example file can be found in the repo.  You can use this
+as a starting point.
+
+You must run this from within an active OpenMDAO development environment, 
+so build the OpenMDAO environment, then install this package. Typically
+you would do this by cd'ing to the openmdao_testapp repo after activating
+the openmdao environment and doing a 'python setup.py develop' from there.
+
 To build a new testing database, do the following:
 
-  python2.6 create_db.py
+  python create_db.py
+
+The startserver and restartserver scripts will redirect server stdout/stderr
+to a server.log file.
 

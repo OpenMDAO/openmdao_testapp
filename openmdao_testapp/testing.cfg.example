@@ -1,6 +1,13 @@
 # Example testing.cfg file for the OpenMDAO automated testing server
 
 [openmdao_testing]
+
+# top 'dir' of the URL
+top: /
+
+# webserver port
+port: 8888
+
 # URL of the git repository being tested
 repo_url: https://github.com/OpenMDAO/OpenMDAO-Framework
 
