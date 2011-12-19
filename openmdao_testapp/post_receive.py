@@ -1,4 +1,3 @@
-
 """
 A script to run an OpenMDAO branch test triggered by a post_recieve
 hook on github.
