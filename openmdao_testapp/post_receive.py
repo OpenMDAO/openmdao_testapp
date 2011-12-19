@@ -283,11 +283,9 @@ def test_commit(payload):
         cmd.append('--testargs="%s"' % ' '.join(TEST_ARGS))
     
     try:
-        ret = 0
-        out = ''
-        #print 'cmd = ',' '.join(cmd)
-        #out, ret = _run_sub(cmd, env=os.environ.copy(), cwd=os.getcwd())
-        #print 'test_branch return code = %s' % ret
+        print 'cmd = ',' '.join(cmd)
+        out, ret = _run_sub(cmd, env=os.environ.copy(), cwd=os.getcwd())
+        print 'test_branch return code = %s' % ret
         
         # untar the repo tarfile
         print 'untarring repo locally so we can build the docs'
