@@ -122,7 +122,10 @@ class Run:
 
 ########################################################################
 
-
+def log(msg, level=0):
+    print msg
+    sys.stdout.flush()
+    
 def activate_and_run(envdir, cmd):
     """"
     Runs the given command from within an activated virtual environment located
@@ -137,7 +140,7 @@ def activate_and_run(envdir, cmd):
     
     # activate the environment and run command
     
-    print("running %s in %s" % (' '.join(command), envdir))
+    log("running %s in %s" % (' '.join(command), envdir))
     env = os.environ.copy()
     for name in ['VIRTUAL_ENV','_OLD_VIRTUAL_PATH','_OLD_VIRTUAL_PROMPT']:
         if name in env: 
@@ -169,7 +172,7 @@ def push_docs(commit_id):
     if DEVDOCS_DIR:
         cmd = ['openmdao', 'push_docs', '-d', DEVDOCS_DIR, 
                'openmdao@web103.webfaction.com']
-        print 'push_docs command = %s' % ' '.join(cmd)
+        log('push_docs command = %s' % ' '.join(cmd))
         try:
             out, ret = activate_and_run(get_env_dir(commit_id), cmd)
         except Exception as err:
@@ -177,12 +180,12 @@ def push_docs(commit_id):
             ret = -1
         model.new_doc_info(commit_id, out)
         if ret == 0:
-            print 'push_docs was successful'
+            log('push_docs was successful')
         else:
-            print 'ERROR: push_docs failed'
+            log('ERROR: push_docs failed')
         return out, ret
     else:
-        print 'push_docs was skipped'
+        log('push_docs was skipped')
         return '', 0 # allow update of production dev docs to be turned off during debugging
 
 
@@ -193,7 +196,7 @@ def do_tests(q):
         try:
             retval = test_commit(payload)
         except (Exception, SystemExit) as err:
-            print str(err)
+            log(str(err))
 
 def send_mail(commit_id, retval, msg, sender=FROM_EMAIL, 
               dest_emails=RESULTS_EMAILS):
@@ -203,31 +206,30 @@ def send_mail(commit_id, retval, msg, sender=FROM_EMAIL,
                      'test %s for commit %s' % (status, commit_id),
                      msg)
     except OSError as err:
-        print str(err)
-        print "ERROR: failed to send notification email"
+        log(str(err))
+        log("ERROR: failed to send notification email")
         
 def build_environment(commit_id):
-    print 'building local environment'
+    log('building local environment')
     envdir = get_env_dir(commit_id)
     tardir = os.path.dirname(envdir)
     startdir = os.getcwd()
     cmd = [PY, 'go-openmdao-dev.py', '--gui']
     os.chdir(tardir)
     try:
-        print 'running command: ',' '.join(cmd)
+        log('running command: %s' % ' '.join(cmd))
         p = subprocess.Popen(cmd, cwd=os.getcwd())
-        #p = subprocess.Popen('%s %s %s' % tuple(cmd), shell=True)
         p.wait()
         ret = p.returncode
     except Exception as err:
-        print str(err)
+        log(str(err))
         ret = -1
     finally:
         os.chdir(startdir)
     if ret == 0:
-        print 'local build successful'
+        log('local build successful')
     else:
-        print "ERROR building local environment. return code=%s" % ret
+        log("ERROR building local environment. return code=%s" % ret)
     return ret
 
 def get_commit_dir(commit_id):
@@ -245,19 +247,19 @@ def test_commit(payload):
     branch = payload['ref'].split('/')[-1]
     
     if repo != REPO_URL:
-        print 'ignoring commit: repo URL %s does not match expected repo URL (%s)' % (repo, REPO_URL)
+        log('ignoring commit: repo URL %s does not match expected repo URL (%s)' % (repo, REPO_URL))
         return -1
     
     if branch not in REPO_BRANCHES:
-        print 'branch is %s' % branch
-        print 'ignoring commit %s: branch is not one of %s' % (commit_id,
-                                                               REPO_BRANCHES)
+        log('branch is %s' % branch)
+        log('ignoring commit %s: branch is not one of %s' % (commit_id,
+                                                             REPO_BRANCHES))
         return -1
     
     # make sure this commit hasn't been tested yet
     cmnts = model.get_host_tests(commit_id)
     if cmnts != None and len(list(cmnts)) > 0:
-        print "commit %s has already been tested" % commit_id
+        log("commit %s has already been tested" % commit_id)
         return -1
     
     tmp_results_dir = os.path.join(get_commit_dir(commit_id), 'host_results')
@@ -266,7 +268,7 @@ def test_commit(payload):
     os.makedirs(tmp_repo_dir)
     
     # grab a copy of the commit
-    print "downloading source tarball from github for commit %s" % commit_id
+    log("downloading source tarball from github for commit %s" % commit_id)
     prts = repo.split('/')
     repo_name = prts[-1]
     org_name = prts[-2]
@@ -283,12 +285,12 @@ def test_commit(payload):
         cmd.append('--testargs="%s"' % ' '.join(TEST_ARGS))
     
     try:
-        print 'cmd = ',' '.join(cmd)
+        log('cmd = %s' % ' '.join(cmd))
         out, ret = _run_sub(cmd, env=os.environ.copy(), cwd=os.getcwd())
-        print 'test_branch return code = %s' % ret
+        log('test_branch return code = %s' % ret)
         
         # untar the repo tarfile
-        print 'untarring repo locally so we can build the docs'
+        log('untarring repo locally so we can build the docs')
         os.chdir(tmp_repo_dir)
         try:
             tar = tarfile.open(tarpath)
@@ -296,7 +298,7 @@ def test_commit(payload):
             tar.close()
         finally:
             os.chdir(startdir)
-        print 'untar successful'
+        log('untar successful')
             
         bldret = build_environment(commit_id)
         if ret == 0:
@@ -304,13 +306,13 @@ def test_commit(payload):
 
         process_results(commit_id, ret, tmp_results_dir, out)
     except (Exception, SystemExit) as err:
-        print 'ERROR during local build: %s' % str(err)
+        log('ERROR during local build: %s' % str(err))
         ret = -1
         process_results(commit_id, ret, tmp_results_dir, str(err))
     finally:
         d = get_commit_dir(commit_id)
         del directory_map[commit_id]
-        print 'removing temp commit directory %s' % d
+        log('removing temp commit directory %s' % d)
         shutil.rmtree(d)
         
     return ret
@@ -378,6 +380,8 @@ def process_results(commit_id, returncode, results_dir, output):
     
 if __name__ == "__main__":
     
+    sys.stderr = sys.stdout
+    
     tester = Thread(target=do_tests, name='tester', args=(commit_queue,))
     tester.daemon = True
     tester.start()
@@ -394,7 +398,6 @@ if __name__ == "__main__":
     )
     
     sys.argv.append(PORT)
-    print sys.argv
     
     app = web.application(urls, globals())
     app.run()
