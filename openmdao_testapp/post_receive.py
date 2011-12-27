@@ -35,7 +35,6 @@ config.readfp(open(os.path.join(APP_DIR, 'testing.cfg'), 'r'))
 TOP = config.get('openmdao_testing', 'top')
 PORT = config.get('openmdao_testing', 'port')
 REPO_URL = config.get('openmdao_testing', 'repo_url')
-#LOCAL_REPO_DIR = config.get('openmdao_testing', 'local_repo_dir')
 APP_URL = config.get('openmdao_testing', 'app_url')
 REPO_BRANCHES = [s.strip() for s in config.get('openmdao_testing', 
                                                'repo_branches').split('\n')]
@@ -207,29 +206,6 @@ def send_mail(commit_id, retval, msg, sender=FROM_EMAIL,
     except OSError as err:
         log(str(err))
         log("ERROR: failed to send notification email")
-        
-def build_environment(commit_id):
-    log('building local environment')
-    envdir = get_env_dir(commit_id)
-    tardir = os.path.dirname(envdir)
-    startdir = os.getcwd()
-    cmd = [PY, 'go-openmdao-dev.py', '--gui']
-    os.chdir(tardir)
-    try:
-        log('running command: %s' % ' '.join(cmd))
-        p = subprocess.Popen(cmd, cwd=os.getcwd())
-        p.wait()
-        ret = p.returncode
-    except Exception as err:
-        log(str(err))
-        ret = -1
-    finally:
-        os.chdir(startdir)
-    if ret == 0:
-        log('local build successful')
-    else:
-        log("ERROR building local environment. return code=%s" % ret)
-    return ret
 
 def get_commit_dir(commit_id):
     if commit_id not in directory_map:
@@ -261,8 +237,9 @@ def test_commit(payload):
         log("commit %s has already been tested" % commit_id)
         return -1
     
-    tmp_results_dir = os.path.join(get_commit_dir(commit_id), 'host_results')
-    tmp_repo_dir = os.path.join(get_commit_dir(commit_id), 'repo')
+    commit_dir = get_commit_dir(commit_id)
+    tmp_results_dir = os.path.join(commit_dir, 'host_results')
+    tmp_repo_dir = os.path.join(commit_dir, 'repo')
     os.makedirs(tmp_results_dir)
     os.makedirs(tmp_repo_dir)
     
@@ -287,21 +264,6 @@ def test_commit(payload):
         log('cmd = %s' % ' '.join(cmd))
         out, ret = _run_sub(cmd, env=os.environ.copy(), cwd=os.getcwd())
         log('test_branch return code = %s' % ret)
-        
-        # untar the repo tarfile
-        log('untarring repo locally so we can build the docs')
-        os.chdir(tmp_repo_dir)
-        try:
-            tar = tarfile.open(tarpath)
-            tar.extractall()
-            tar.close()
-        finally:
-            os.chdir(startdir)
-        log('untar successful')
-            
-        bldret = build_environment(commit_id)
-        if ret == 0:
-            ret = bldret
 
         process_results(commit_id, ret, tmp_results_dir, out)
     except (Exception, SystemExit) as err:
@@ -350,6 +312,7 @@ def process_results(commit_id, returncode, results_dir, output):
     msg = "\n\nFull test results can be found here: %s" % os.path.join(APP_URL,
                                                                        'hosts',
                                                                        commit_id)
+    doc_host = None
     for host in os.listdir(results_dir):
         try:
             with open(os.path.join(results_dir, host, 'run.out'), 'r') as f:
@@ -358,14 +321,18 @@ def process_results(commit_id, returncode, results_dir, output):
             model.new_test(commit_id, results, host,
                            passes=passes, fails=fails, skips=skips,
                            elapsed_time=elapsed_time)
+            if returncode == 0 and os.path.isfile(os.path.join(results_dir, host, 'html.tar.gz')):
+                doc_host = host
         except Exception as err:
             model.new_test(commit_id, str(err), host)
 
     try:
         if returncode == 0:
             docout, returncode = push_docs(commit_id)  # update the dev docs if the tests passed
-            if returncode == 0:
-                docout = '\n\nDev docs built successfully\n'
+            if doc_host is None:
+                docout = '\n\nReturn code was 0 but dev docs were not built???\n'
+            else:
+                docout = '\n\nDev docs built successfully on host %s\n' % doc_host
         else:
             docout = "\n\nDev docs were not built\n"
             model.new_doc_info(commit_id, docout)
