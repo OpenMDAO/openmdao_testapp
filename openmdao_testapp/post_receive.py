@@ -26,6 +26,7 @@ import web
 import model
 
 from openmdao.util.git import download_github_tar
+from openmdao.devtools.utils import settings, put, run, cd
 
 APP_DIR = model.APP_DIR
 
@@ -156,31 +157,41 @@ def _run_sub(cmd, **kwargs):
     output = p.communicate()[0]
     return (output, p.returncode)
 
-def get_env_dir(commit_id):
-    repo_dir = os.path.join(get_commit_dir(commit_id), 'repo')
-    for f in os.listdir(repo_dir):
-        if os.path.isdir(os.path.join(repo_dir, f)) and \
-                f.startswith('OpenMDAO-OpenMDAO-Framework'):
-            return os.path.join(repo_dir, f, 'devenv')
+#def get_env_dir(commit_id):
+    #repo_dir = os.path.join(get_commit_dir(commit_id), 'repo')
+    #for f in os.listdir(repo_dir):
+        #if os.path.isdir(os.path.join(repo_dir, f)) and \
+                #f.startswith('OpenMDAO-OpenMDAO-Framework'):
+            #return os.path.join(repo_dir, f, 'devenv')
    
-    raise OSError("Couldn't locate source tree for commit %s" % commit_id)
+    #raise OSError("Couldn't locate source tree for commit %s" % commit_id)
 
 
-def push_docs(commit_id):
-    if DEVDOCS_DIR:
-        cmd = ['openmdao', 'push_docs', '-d', DEVDOCS_DIR, 
-               'openmdao@web103.webfaction.com']
-        log('push_docs command = %s' % ' '.join(cmd))
+def push_docs(commit_id, doc_host):
+    if DEVDOCS_DIR and doc_host is not None:
+        tarname = 'html.tar.gz'
+        tarpath = os.path.join(get_commit_dir(commit_id), 'host_results', 
+                               doc_host, tarname)
         try:
-            out, ret = activate_and_run(get_env_dir(commit_id), cmd)
+            with settings(host_string='openmdao@web103.webfaction.com'):
+                # tar up the docs so we can upload them to the server
+                # put the docs on the server and untar them
+                put(tarpath, '%s/%s' % (DEVDOCS_DIR, tarname))
+                with cd(DEVDOCS_DIR):
+                    run('tar xzf %s' % tarname)
+                    run('rm -rf dev_docs')
+                    run('mv html dev_docs')
+                    run('rm -f %s' % tarname)
         except Exception as err:
+            log('ERROR: push_docs failed: %s' % str(err))
             out = str(err)
             ret = -1
-        model.new_doc_info(commit_id, out)
-        if ret == 0:
-            log('push_docs was successful')
         else:
-            log('ERROR: push_docs failed')
+            log('push_docs was successful')
+            out = 'Docs built successfully'
+            ret = 0
+            
+        model.new_doc_info(commit_id, out)
         return out, ret
     else:
         log('push_docs was skipped')
@@ -328,7 +339,7 @@ def process_results(commit_id, returncode, results_dir, output):
 
     try:
         if returncode == 0:
-            docout, returncode = push_docs(commit_id)  # update the dev docs if the tests passed
+            docout, returncode = push_docs(commit_id, doc_host)  # update the dev docs if the tests passed
             if doc_host is None:
                 docout = '\n\nReturn code was 0 but dev docs were not built???\n'
             else:
