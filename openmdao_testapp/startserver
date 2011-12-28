@@ -1,1 +1,1 @@
-python2.6 post_receive.py > server.log 2>&1 &
+python post_receive.py > server.log 2>&1 &
