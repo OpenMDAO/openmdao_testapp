@@ -3,6 +3,7 @@ Functions that interact with the testing database.
 """
 
 import os
+import sqlite3
 import web, datetime
 from web.utils import Storage
 
@@ -50,7 +51,7 @@ def get_test(host, commit_id):
 
 def new_test(commit_id, results, host, 
              passes=0, fails=0, skips=0, elapsed_time='unknown'):
-    db.insert('tests', commit_id=commit_id, results=results, 
+    db.insert('tests', commit_id=commit_id, results=sqlite3.Binary(results), 
               date=datetime.datetime.utcnow(),
               host=host, passes=passes, fails=fails, skips=skips,
               elapsed_time=elapsed_time)
@@ -64,7 +65,7 @@ def get_docbuild(commit_id):
 
 
 def new_doc_info(commit_id, results):
-    db.insert('docbuilds', commit_id=commit_id, results=results)
+    db.insert('docbuilds', commit_id=commit_id, results=sqlite3.Binary(results))
 
     
 def delete_test(commit_id):

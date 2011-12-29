@@ -7,7 +7,7 @@ CREATE TABLE tests (
    skips INTEGER,
    elapsed_time TEXT,
    platform TEXT,
-   results TEXT,
+   results BLOB,
    doc_results TEXT,
    date TEXT
 );
@@ -15,6 +15,6 @@ CREATE TABLE tests (
 
 CREATE TABLE docbuilds (
    commit_id TEXT,
-   results TEXT
+   results BLOB
 );
 

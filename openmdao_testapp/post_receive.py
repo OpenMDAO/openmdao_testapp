@@ -20,6 +20,7 @@ import atexit
 from threading import Thread
 from Queue import Queue
 import ConfigParser
+import zlib
 
 import web
 
@@ -57,6 +58,7 @@ commit_queue = Queue()
 
 def fixmulti(txt):
     """adds unescaped html line breaks"""
+    txt = zlib.decompress(txt)
     txt = web.net.htmlquote(txt)
     return txt.replace('\n', '<br/>')
     
@@ -157,16 +159,6 @@ def _run_sub(cmd, **kwargs):
     output = p.communicate()[0]
     return (output, p.returncode)
 
-#def get_env_dir(commit_id):
-    #repo_dir = os.path.join(get_commit_dir(commit_id), 'repo')
-    #for f in os.listdir(repo_dir):
-        #if os.path.isdir(os.path.join(repo_dir, f)) and \
-                #f.startswith('OpenMDAO-OpenMDAO-Framework'):
-            #return os.path.join(repo_dir, f, 'devenv')
-   
-    #raise OSError("Couldn't locate source tree for commit %s" % commit_id)
-
-
 def push_docs(commit_id, doc_host):
     if DEVDOCS_DIR and doc_host is not None:
         tarname = 'html.tar.gz'
@@ -191,7 +183,7 @@ def push_docs(commit_id, doc_host):
             out = 'Docs built successfully'
             ret = 0
             
-        model.new_doc_info(commit_id, out)
+        model.new_doc_info(commit_id, zlib.compress(out, 9))
         return out, ret
     else:
         log('push_docs was skipped')
@@ -329,7 +321,7 @@ def process_results(commit_id, returncode, results_dir, output):
             with open(os.path.join(results_dir, host, 'run.out'), 'r') as f:
                 results = f.read()
             passes, fails, skips, elapsed_time = parse_test_output(results)
-            model.new_test(commit_id, results, host,
+            model.new_test(commit_id, zlib.compress(results, 9), host,
                            passes=passes, fails=fails, skips=skips,
                            elapsed_time=elapsed_time)
             if returncode == 0 and os.path.isfile(os.path.join(results_dir, host, 'html.tar.gz')):
