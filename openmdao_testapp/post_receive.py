@@ -367,6 +367,8 @@ if __name__ == "__main__":
     )
     
     sys.argv.append(PORT)
+
+    web.config.debug = False
     
     app = web.application(urls, globals())
     app.run()
