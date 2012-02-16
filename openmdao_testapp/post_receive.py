@@ -347,8 +347,7 @@ def process_results(commit_id, returncode, results_dir, output):
 
         
     
-if __name__ == "__main__":
-    
+def start_server():    
     sys.stderr = sys.stdout
     
     tester = Thread(target=do_tests, name='tester', args=(commit_queue,))
@@ -372,5 +371,9 @@ if __name__ == "__main__":
     
     app = web.application(urls, globals())
     app.run()
+
+
+if __name__ == "__main__":
+    start_server()
 
 

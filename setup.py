@@ -15,6 +15,7 @@ setup(name='openmdao_testapp',
       entry_points = {
          "console_scripts": [
              "send_payload = openmdao_testapp.test.test_hook:send_payload"
+             "start_server = openmdao_testapp.post_receive:start_server"
          ]
       },
    )
