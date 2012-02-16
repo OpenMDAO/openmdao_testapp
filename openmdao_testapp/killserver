@@ -1,1 +1,1 @@
-ps -ef | grep post_receive | grep -v grep | awk '{print $2}' | xargs kill 
+ps -ef | grep start_testserver | grep -v grep | awk '{print $2}' | xargs kill 
