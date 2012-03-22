@@ -292,21 +292,22 @@ def parse_test_output(output):
     numtests = fails = skips = 0
     elapsed_time = 'unknown'
     
-    last = output[-1024:]
-    ran = re.search('Ran ([0-9]+) tests in ([0-9\.]+s)', last)
-    if ran:
-        numtests = int(ran.group(1))
-        elapsed_time = ran.group(2)
-        fail = re.search('FAILED \((.+)\)', last)
-        if fail:
-            parts = fail.group(1).split(',')
-            for part in parts:
-                fails += int(part.split('=')[1])
-        skipped = re.search('SKIP=([0-9]+)', last)
-        if skipped:
-            skips = int(skipped.group(1))
-        else:
-            skips = 0
+    for last in output.rsplit('\n'):
+        ran = re.search('Ran ([0-9]+) tests in ([0-9\.]+s)', last)
+        if ran:
+            numtests = int(ran.group(1))
+            elapsed_time = ran.group(2)
+            break
+        if fails == 0:
+            fail = re.search('FAILED \((.+)\)', last)
+            if fail:
+                parts = fail.group(1).split(',')
+                for part in parts:
+                    fails += int(part.split('=')[1])
+        if skips == 0:
+            skipped = re.search('SKIP=([0-9]+)', last)
+            if skipped:
+                skips = int(skipped.group(1))
     
     return (numtests-fails-skips, fails, skips, elapsed_time)
 
