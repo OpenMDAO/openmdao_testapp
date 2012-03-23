@@ -294,7 +294,6 @@ def parse_test_output(outfile):
     
     with open(outfile, 'r') as f:
         for last in f:
-            print 'scanning line: ',last
             if numtests == 0:
                 ran = re.search('Ran ([0-9]+) tests in ([0-9\.]+s)', last)
                 if ran:
