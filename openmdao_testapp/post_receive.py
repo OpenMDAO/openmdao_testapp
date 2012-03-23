@@ -282,8 +282,8 @@ def test_commit(payload):
     return ret
 
 
-def parse_test_output(output):
-    """Given a string of test results, try to extract the following:
+def parse_test_output(outfile):
+    """Given a test results filename, try to extract the following:
         number of passing tests,
         number of failing tests,
         total elapsed time
@@ -292,22 +292,25 @@ def parse_test_output(output):
     numtests = fails = skips = 0
     elapsed_time = 'unknown'
     
-    for last in output.rsplit('\n'):
-        ran = re.search('Ran ([0-9]+) tests in ([0-9\.]+s)', last)
-        if ran:
-            numtests = int(ran.group(1))
-            elapsed_time = ran.group(2)
-            break
-        if fails == 0:
-            fail = re.search('FAILED \((.+)\)', last)
-            if fail:
-                parts = fail.group(1).split(',')
-                for part in parts:
-                    fails += int(part.split('=')[1])
-        if skips == 0:
-            skipped = re.search('SKIP=([0-9]+)', last)
-            if skipped:
-                skips = int(skipped.group(1))
+    with open(outfile, 'r') as f:
+        for last in f:
+            print 'scanning line: ',last
+            if numtests == 0:
+                ran = re.search('Ran ([0-9]+) tests in ([0-9\.]+s)', last)
+                if ran:
+                    numtests = int(ran.group(1))
+                    elapsed_time = ran.group(2)
+            if fails == 0:
+                fail = re.search('FAILED \((.+)\)', last)
+                if fail:
+                    parts = fail.group(1).split(',')
+                    for part in parts:
+                        if not part.startswith('SKIP'):
+                            fails += int(part.split('=')[1])
+            if skips == 0:
+                skipped = re.search('SKIP=([0-9]+)', last)
+                if skipped:
+                    skips = int(skipped.group(1))
     
     return (numtests-fails-skips, fails, skips, elapsed_time)
 
@@ -319,9 +322,7 @@ def process_results(commit_id, returncode, results_dir, output):
     doc_host = None
     for host in os.listdir(results_dir):
         try:
-            with open(os.path.join(results_dir, host, 'run.out'), 'r') as f:
-                results = f.read()
-            passes, fails, skips, elapsed_time = parse_test_output(results)
+            passes, fails, skips, elapsed_time = parse_test_output(os.path.join(results_dir, host, 'run.out'))
             model.new_test(commit_id, zlib.compress(results, 9), host,
                            passes=passes, fails=fails, skips=skips,
                            elapsed_time=elapsed_time)
