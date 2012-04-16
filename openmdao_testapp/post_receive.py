@@ -11,6 +11,7 @@ import json
 import pprint
 import StringIO
 import subprocess
+import socket
 import tarfile
 import fnmatch
 import tempfile
@@ -50,6 +51,8 @@ TEST_ARGS = [s.strip() for s in config.get('openmdao_testing',
                                            'test_args').split('\n') if s.strip()]
 
 DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location').strip()
+
+DOC_DEST_HOST = 'web103.webfaction.com'
 
 # map of commit id to temp directory
 directory_map = {}
@@ -165,15 +168,33 @@ def push_docs(commit_id, doc_host):
         tarpath = os.path.join(get_commit_dir(commit_id), 'host_results', 
                                doc_host, tarname)
         try:
-            with settings(host_string='openmdao@web103.webfaction.com'):
-                # tar up the docs so we can upload them to the server
-                # put the docs on the server and untar them
-                put(tarpath, '%s/%s' % (DEVDOCS_DIR, tarname))
-                with cd(DEVDOCS_DIR):
-                    run('tar xzf %s' % tarname)
-                    run('rm -rf dev_docs')
-                    run('mv html dev_docs')
-                    run('rm -f %s' % tarname)
+            if not os.path.isfile(tarpath):
+                raise OSError("docs tar file '%s' was not found" % tarfile)
+            
+            cmds = [
+                'tar xzf %s' % tarname,
+                'rm -rf dev_docs',
+                'mv html dev_docs',
+                'rm -f %s' % tarname,
+            ]
+            
+            if socket.gethostname() == DOC_DEST_HOST: # local, so don't use fabric
+                startdir = os.getcwd()
+                try:
+                    os.chdir(os.path.join(os.environ['HOME'], DEVDOCS_DIR))
+                    shutil.copy(tarpath, tarname)
+                    for cmd in cmds:
+                        subprocess.check_call(cmd)
+                finally:
+                    os.chdir(startdir)
+            else:
+                with settings(host_string='openmdao@%s' % DOC_DEST_HOST):
+                    # tar up the docs so we can upload them to the server
+                    # put the docs on the server and untar them
+                    put(tarpath, '%s/%s' % (DEVDOCS_DIR, tarname))
+                    with cd(DEVDOCS_DIR):
+                        for cmd in cmds:
+                            run(cmd)
         except Exception as err:
             log('ERROR: push_docs failed: %s' % str(err))
             out = str(err)
