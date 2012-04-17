@@ -52,7 +52,10 @@ TEST_ARGS = [s.strip() for s in config.get('openmdao_testing',
 
 DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location').strip()
 
-DOC_DEST_HOST = 'web103.webfaction.com'
+if config.has_option('openmdao_testing', 'doc_dest_host'):
+    DOC_DEST_HOST = config.get('openmdao_testing', 'doc_dest_host').strip()
+else:
+    DOC_DEST_HOST = 'web103.webfaction.com'
 
 # map of commit id to temp directory
 directory_map = {}
@@ -179,15 +182,20 @@ def push_docs(commit_id, doc_host):
             ]
             
             if socket.gethostname() == DOC_DEST_HOST: # local, so don't use fabric
+                print "docs are already local"
                 startdir = os.getcwd()
                 try:
+                    print "changing dir to %s" % os.path.join(os.environ['HOME'], DEVDOCS_DIR)
                     os.chdir(os.path.join(os.environ['HOME'], DEVDOCS_DIR))
+                    print "copying %s to %s" % (tarpath, tarname)
                     shutil.copy(tarpath, tarname)
                     for cmd in cmds:
-                        subprocess.check_call(cmd)
+                        print "running cmd: %s" % cmd
+                        subprocess.check_call(cmd, cwd=os.getcwd(), shell=True)
                 finally:
                     os.chdir(startdir)
             else:
+                print "docs are remote.   push to doc dest host %s" % DOC_DEST_HOST
                 with settings(host_string='openmdao@%s' % DOC_DEST_HOST):
                     # tar up the docs so we can upload them to the server
                     # put the docs on the server and untar them

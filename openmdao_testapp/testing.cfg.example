@@ -43,3 +43,7 @@ test_args: --
 # location on the openmdao.org server where dev docs will be 
 # placed (if the tests are successful)
 devdocs_location = 
+
+# for debugging only.  comment this out for the production server
+#doc_dest_host: blah_host
+
