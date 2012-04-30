@@ -89,17 +89,23 @@ class Hosts:
     def GET(self, commit_id):
         """ Show hosts for a given test """
         tests = model.get_host_tests(commit_id)
-        return render.hosts(tests, commit_id, 
-                            os.path.join(REPO_URL,'commit',commit_id),
-                            os.path.join(APP_URL,'viewdocs',commit_id))
+        if tests is None:
+            return 'commit %s not found' % commit_id
+        else:
+            return render.hosts(tests, commit_id, 
+                                os.path.join(REPO_URL,'commit',commit_id),
+                                os.path.join(APP_URL,'viewdocs',commit_id))
 
 class View:
 
     def GET(self, host, commit_id):
         """ View results for a single commit on a host"""
         test = model.get_test(host, commit_id)
-        return render.view(test,
-                           os.path.join(REPO_URL,'commit',commit_id))
+        if test is None:
+            return 'commit %s not found' % commit_id
+        else:
+            return render.view(test,
+                               os.path.join(REPO_URL,'commit',commit_id))
 
 class ViewDocs:
 
