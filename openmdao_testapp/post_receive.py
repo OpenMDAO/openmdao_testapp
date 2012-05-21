@@ -327,12 +327,14 @@ def parse_test_output(output):
     numtests = fails = skips = 0
     elapsed_time = 'unknown'
     
-    for last in output.rsplit('\n'):
+    lines = output.split('\n')
+    for last in lines[::-1]:
         if numtests == 0:
             ran = re.search('Ran ([0-9]+) tests in ([0-9\.]+s)', last)
             if ran:
                 numtests = int(ran.group(1))
                 elapsed_time = ran.group(2)
+                break
         if fails == 0:
             fail = re.search('FAILED \((.+)\)', last)
             if fail:
