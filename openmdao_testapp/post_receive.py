@@ -363,6 +363,8 @@ def process_results(commit_id, returncode, results_dir, output):
             model.new_test(commit_id, zlib.compress(results, 9), host,
                            passes=passes, fails=fails, skips=skips,
                            elapsed_time=elapsed_time)
+            if fails > 0 and returncode == 0:
+                returncode = -1
             if returncode == 0 and os.path.isfile(os.path.join(results_dir, host, 'html.tar.gz')):
                 doc_host = host
         except Exception as err:
