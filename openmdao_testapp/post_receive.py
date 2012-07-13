@@ -64,7 +64,10 @@ commit_queue = Queue()
 
 def fixmulti(txt):
     """adds unescaped html line breaks"""
-    txt = zlib.decompress(txt)
+    try:
+        txt = zlib.decompress(txt)
+    except Exception as err:
+        pass
     txt = web.net.htmlquote(txt)
     return txt.replace('\n', '<br/>')
     
