@@ -69,7 +69,7 @@ def fixmulti(txt):
     except Exception as err:
         pass
     txt = web.net.htmlquote(txt)
-    return txt.replace('\n', '<br/>')
+    return str(txt).replace('\n', '<br/>')
     
     
 ### Templates
