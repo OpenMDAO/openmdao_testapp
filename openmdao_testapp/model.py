@@ -4,6 +4,7 @@ Functions that interact with the testing database.
 
 import os
 import sqlite3
+import zlib
 import web, datetime
 from web.utils import Storage
 
@@ -65,7 +66,7 @@ def get_docbuild(commit_id):
 
 
 def new_doc_info(commit_id, results):
-    db.insert('docbuilds', commit_id=commit_id, results=sqlite3.Binary(results))
+    db.insert('docbuilds', commit_id=commit_id, results=sqlite3.Binary(zlib.compress(results,9)))
 
     
 def delete_test(commit_id):

@@ -221,7 +221,7 @@ def push_docs(commit_id, doc_host):
             out = 'Docs built successfully'
             ret = 0
             
-        model.new_doc_info(commit_id, zlib.compress(out, 9))
+        model.new_doc_info(commit_id, out)
         return out, ret
     else:
         log('push_docs was skipped')
