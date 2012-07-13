@@ -55,7 +55,7 @@ DEVDOCS_DIR = config.get('openmdao_testing', 'devdocs_location').strip()
 if config.has_option('openmdao_testing', 'doc_dest_host'):
     DOC_DEST_HOST = config.get('openmdao_testing', 'doc_dest_host').strip()
 else:
-    DOC_DEST_HOST = 'web103.webfaction.com'
+    DOC_DEST_HOST = 'web39.webfaction.com'
 
 # map of commit id to temp directory
 directory_map = {}
