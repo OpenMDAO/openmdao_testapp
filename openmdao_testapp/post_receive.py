@@ -68,8 +68,9 @@ def fixmulti(txt):
         txt = zlib.decompress(txt)
     except Exception as err:
         pass
+    txt = str(txt)
     txt = web.net.htmlquote(txt)
-    return str(txt).replace('\n', '<br/>')
+    return txt.replace('\n', '<br/>')
     
     
 ### Templates
