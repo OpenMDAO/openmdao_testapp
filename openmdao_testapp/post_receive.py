@@ -375,22 +375,16 @@ def process_results(commit_id, returncode, results_dir, output):
             model.new_test(commit_id, str(err), host)
 
     try:
-        if returncode == 0:
-            docout, returncode = push_docs(commit_id, doc_host)  # update the dev docs if the tests passed
-            if doc_host is None:
-                docout = '\n\nReturn code was 0 but dev docs were not built???\n'
-            else:
-                docout = '\n\nDev docs built successfully on host %s\n' % doc_host
+        docout, returncode = push_docs(commit_id, doc_host)  # update the dev docs if the tests passed
+        if doc_host is None:
+            docout = '\n\nReturn code was 0 but dev docs were not built???\n'
         else:
-            docout = "\n\nDev docs were not built\n"
-            model.new_doc_info(commit_id, docout)
+            docout = '\n\nDev docs built successfully on host %s\n' % doc_host
     except Exception as err:
         returncode = -1
         docout = str(err)
 
     send_mail(commit_id, returncode, output+docout+msg)
-
-        
     
 def start_server():    
     sys.stderr = sys.stdout
