@@ -384,6 +384,15 @@ def process_results(commit_id, returncode, results_dir, output):
         returncode = -1
         docout = str(err)
 
+    #Integrate test results to POST into a slack channel.
+    import requests
+    url = "https://openmdao.slack.com/services/hooks/incoming-webhook?token=hDJ2XPGqNj69P47il5rpekUV"
+    status = 'TESTS SUCCEEDED: ' if returncode == 0 else 'TESTS FAILED: '
+    slack_msg = status+msg
+    payload = {"text":slack_msg}
+    r = requests.post(url, data=json.dumps(payload))
+
+    #Still send mail, may remove this later, and just use Slack
     send_mail(commit_id, returncode, output+docout+msg)
     
 def start_server():    
