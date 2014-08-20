@@ -359,7 +359,6 @@ def process_results(commit_id, returncode, results_dir, output):
                                                                        'hosts',
                                                                        commit_id)
     doc_host = None
-    all_plats_passed = None
     hosts_failed = 0
     hosts_skipped = 0
 
@@ -373,15 +372,10 @@ def process_results(commit_id, returncode, results_dir, output):
                            elapsed_time=elapsed_time)
             
             if fails > 0:
-                all_plats_passed = -1
                 hosts_failed +=1
 
             elif fails==0 and passes==0 and skips==0:
-                all_plats_passed = -1
                 hosts_skipped += 1
-
-            else:
-                all_plats_passed = 0
 
             if os.path.isfile(os.path.join(results_dir, host, 'html.tar.gz')):
                 doc_host = host
@@ -399,12 +393,16 @@ def process_results(commit_id, returncode, results_dir, output):
         returncode = -1
         docout = str(err)
     
-    if all_plats_passed == -1:
+    passed_all = -1
+
+    if hosts_failed > 0 or hosts_skipped > 0:
         msg += "\n----------TESTING FAILED!----------"
+        passed_all = 1
 
     else: 
         msg += "\n++++++++++TESTING SUCCEEDED!+++++++++"
-        
+        passed_all = 0
+
     msg += "\nHosts failed:  %s" % hosts_failed
     msg += "\nHosts that didn't launch: %s" % hosts_skipped
     msg += "\n"
@@ -413,13 +411,13 @@ def process_results(commit_id, returncode, results_dir, output):
     #Integrate test results to POST into a slack channel.
     import requests
     url = "https://openmdao.slack.com/services/hooks/incoming-webhook?token=hDJ2XPGqNj69P47il5rpekUV"
-    status = 'TESTS SUCCEEDED: ' if all_plats_passed == 0 else 'TESTS FAILED: '
+    status = 'TESTS SUCCEEDED: ' if passed_all == 0 else 'TESTS FAILED: '
     slack_msg = status+msg
     payload = {"text":slack_msg}
     r = requests.post(url, data=json.dumps(payload))
 
     #Still send mail, may remove this later, and just use Slack
-    send_mail(commit_id, all_plats_passed, output+docout+msg)
+    send_mail(commit_id, passed_all, output+docout+msg)
     
 def start_server():    
     sys.stderr = sys.stdout
