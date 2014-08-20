@@ -372,10 +372,9 @@ def process_results(commit_id, returncode, results_dir, output):
                            passes=passes, fails=fails, skips=skips,
                            elapsed_time=elapsed_time)
             
-            if fails > 0: #and returncode == 0:
+            if fails > 0:
                 all_plats_passed = -1
                 hosts_failed +=1
-                #returncode = -1
 
             elif fails==0 and passes==0 and skips==0:
                 all_plats_passed = -1
