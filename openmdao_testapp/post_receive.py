@@ -359,6 +359,10 @@ def process_results(commit_id, returncode, results_dir, output):
                                                                        'hosts',
                                                                        commit_id)
     doc_host = None
+    all_plats_passed = 0
+    hosts_failed = 0
+    hosts_skipped = 0
+
     for host in os.listdir(results_dir):
         try:
             with open(os.path.join(results_dir, host, 'run.out'), 'r') as f:
@@ -367,17 +371,26 @@ def process_results(commit_id, returncode, results_dir, output):
             model.new_test(commit_id, zlib.compress(results, 9), host,
                            passes=passes, fails=fails, skips=skips,
                            elapsed_time=elapsed_time)
-            if fails > 0 and returncode == 0:
+            
+            if fails > 0: #and returncode == 0:
+                all_plats_passed = -1
+                hosts_failed +=1
                 returncode = -1
-            if returncode == 0 and os.path.isfile(os.path.join(results_dir, host, 'html.tar.gz')):
+
+            if fails==0 and passes==0 and skips==0:
+                all_plats_passed = -1
+                hosts_skipped += 1
+
+            if os.path.isfile(os.path.join(results_dir, host, 'html.tar.gz')):
                 doc_host = host
+        
         except Exception as err:
             model.new_test(commit_id, str(err), host)
 
     try:
         docout, returncode = push_docs(commit_id, doc_host)  # update the dev docs if the tests passed
         if doc_host is None:
-            docout = '\n\nReturn code was 0 but dev docs were not built???\n'
+            docout = '\n\nDev docs were not built due to lack of host specified.\n'
         else:
             docout = '\n\nDev docs built successfully on host %s\n' % doc_host
     except Exception as err:
@@ -387,13 +400,13 @@ def process_results(commit_id, returncode, results_dir, output):
     #Integrate test results to POST into a slack channel.
     import requests
     url = "https://openmdao.slack.com/services/hooks/incoming-webhook?token=hDJ2XPGqNj69P47il5rpekUV"
-    status = 'TESTS SUCCEEDED: ' if returncode == 0 else 'TESTS FAILED: '
+    status = 'TESTS SUCCEEDED: ' if all_plats_passed == 0 else 'TESTS FAILED: '
     slack_msg = status+msg
     payload = {"text":slack_msg}
     r = requests.post(url, data=json.dumps(payload))
 
     #Still send mail, may remove this later, and just use Slack
-    send_mail(commit_id, returncode, output+docout+msg)
+    send_mail(commit_id, all_plats_passed, output+docout+msg)
     
 def start_server():    
     sys.stderr = sys.stdout
