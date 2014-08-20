@@ -359,7 +359,7 @@ def process_results(commit_id, returncode, results_dir, output):
                                                                        'hosts',
                                                                        commit_id)
     doc_host = None
-    all_plats_passed = 0
+    all_plats_passed = None
     hosts_failed = 0
     hosts_skipped = 0
 
@@ -375,11 +375,14 @@ def process_results(commit_id, returncode, results_dir, output):
             if fails > 0: #and returncode == 0:
                 all_plats_passed = -1
                 hosts_failed +=1
-                returncode = -1
+                #returncode = -1
 
-            if fails==0 and passes==0 and skips==0:
+            elif fails==0 and passes==0 and skips==0:
                 all_plats_passed = -1
                 hosts_skipped += 1
+
+            else:
+                all_plats_passed = 0
 
             if os.path.isfile(os.path.join(results_dir, host, 'html.tar.gz')):
                 doc_host = host
@@ -396,6 +399,17 @@ def process_results(commit_id, returncode, results_dir, output):
     except Exception as err:
         returncode = -1
         docout = str(err)
+    
+    if all_plats_passed == -1:
+        msg += "\n----------TESTING FAILED!----------"
+
+    else: 
+        msg += "\n++++++++++TESTING SUCCEEDED!+++++++++"
+        
+    msg += "\nHosts failed:  %s" % hosts_failed
+    msg += "\nHosts that didn't launch: %s" % hosts_skipped
+    msg += "\n"
+
 
     #Integrate test results to POST into a slack channel.
     import requests
